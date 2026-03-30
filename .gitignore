@@ -1,0 +1,29 @@
+# Env
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+dist/
+build/
+coverage/
+
+# MQTT certs
+services/broker/passwd
+*.pem
+*.crt
+*.key
+certs/
+
+# Docker volumes
+data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
