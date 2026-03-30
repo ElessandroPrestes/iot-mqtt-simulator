@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts ──────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ── Base ──────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --sidebar-width: 280px;
+    --header-height: 64px;
+  }
+
+  html {
+    @apply bg-bg text-ink font-sans antialiased;
+    scrollbar-color: #1E2D40 #0A0E1A;
+    scrollbar-width: thin;
+  }
+
+  body {
+    @apply bg-bg min-h-screen;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  ::-webkit-scrollbar       { @apply w-1.5; }
+  ::-webkit-scrollbar-track { @apply bg-bg; }
+  ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-ink-dim; }
+}
+
+/* ── Components ────────────────────────────────────────────── */
+@layer components {
+
+  .card {
+    @apply bg-bg-card border border-border rounded-card shadow-card
+           transition-colors duration-200;
+  }
+
+  .sensor-card {
+    @apply card p-4 relative overflow-hidden cursor-default;
+  }
+  .sensor-card--normal   { @apply border-l-2 border-l-normal shadow-glow-normal; }
+  .sensor-card--warning  { @apply border-l-2 border-l-warning shadow-glow-warning; }
+  .sensor-card--critical { @apply border-l-2 border-l-critical shadow-glow-critical animate-pulse-slow; }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full
+           text-2xs font-mono font-medium uppercase tracking-widest;
+  }
+  .status-badge--normal   { @apply bg-normal-muted text-normal; }
+  .status-badge--warning  { @apply bg-warning-muted text-warning; }
+  .status-badge--critical { @apply bg-critical-muted text-critical; }
+
+  .sensor-value {
+    @apply font-mono text-3xl font-bold tracking-tighter text-ink;
+  }
+  .sensor-unit {
+    @apply font-mono text-sm text-ink-muted ml-1;
+  }
+
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded text-sm font-medium
+           transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-bg hover:bg-accent/90 shadow-glow-accent;
+  }
+  .btn-ghost {
+    @apply btn text-ink-muted hover:text-ink hover:bg-bg-hover;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded text-sm font-medium
+           text-ink-muted hover:text-ink hover:bg-bg-hover
+           transition-colors duration-150 cursor-pointer;
+  }
+  .sidebar-item--active {
+    @apply text-accent bg-accent-muted hover:bg-accent-muted;
+  }
+
+  .alert-item {
+    @apply flex items-start gap-3 p-3 rounded-lg border animate-fade-in;
+  }
+  .alert-item--warning  { @apply border-warning/30 bg-warning-muted/50; }
+  .alert-item--critical { @apply border-critical/30 bg-critical-muted/50; }
+
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block;
+  }
+  .status-dot--connected   { @apply bg-normal animate-pulse-slow; }
+  .status-dot--warning     { @apply bg-warning animate-pulse; }
+  .status-dot--critical    { @apply bg-critical animate-blink; }
+  .status-dot--error       { @apply bg-ink-dim; }
+
+  .skeleton {
+    @apply bg-bg-hover animate-pulse rounded;
+  }
+
+  .divider {
+    @apply h-px bg-border my-4;
+  }
+
+  .metric-row {
+    @apply flex items-center justify-between py-1.5;
+  }
+  .metric-label {
+    @apply text-xs text-ink-muted font-sans uppercase tracking-wider;
+  }
+  .metric-value {
+    @apply text-sm font-mono text-ink;
+  }
+}
+
+/* ── Utilities extras ──────────────────────────────────────── */
+@layer utilities {
+  .font-mono    { font-family: 'JetBrains Mono', monospace; }
+  .text-balance { text-wrap: balance; }
+
+  .glass {
+    @apply bg-bg-card/80 backdrop-blur-sm border border-border/60;
+  }
+
+  .gradient-critical {
+    background: linear-gradient(135deg, rgba(255,59,59,0.04) 0%, transparent 60%);
+  }
+  .gradient-warning {
+    background: linear-gradient(135deg, rgba(255,184,0,0.04) 0%, transparent 60%);
+  }
+  .gradient-accent {
+    background: linear-gradient(135deg, rgba(0,212,255,0.04) 0%, transparent 60%);
+  }
+}
