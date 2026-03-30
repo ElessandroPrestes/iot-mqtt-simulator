@@ -1,0 +1,121 @@
+version: '3.9'
+
+services:
+  # ─────────────────────────────────────────
+  # MQTT BROKER — Eclipse Mosquitto
+  # ─────────────────────────────────────────
+  broker:
+    image: eclipse-mosquitto:2.0
+    container_name: iot_broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"      # WebSocket MQTT
+    volumes:
+      - ./services/broker/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./services/broker/passwd:/mosquitto/config/passwd:ro
+      - broker_data:/mosquitto/data
+      - broker_log:/mosquitto/log
+    networks:
+      - iot_network
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-i", "healthcheck", "-W", "3"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # MONGODB
+  # ─────────────────────────────────────────
+  mongo:
+    image: mongo:7.0
+    container_name: iot_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: iot_dashboard
+    networks:
+      - iot_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # API — Node.js + Express
+  # ─────────────────────────────────────────
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+      target: development
+    container_name: iot_api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "9090:9090"      # Métricas Prometheus
+    env_file: .env
+    volumes:
+      - ./services/api/src:/app/src:ro
+    depends_on:
+      broker:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - iot_network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # SIMULATOR — Publica dados falsos via MQTT
+  # ─────────────────────────────────────────
+  simulator:
+    build:
+      context: ./services/simulator
+      dockerfile: Dockerfile
+    container_name: iot_simulator
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      broker:
+        condition: service_healthy
+    networks:
+      - iot_network
+
+  # ─────────────────────────────────────────
+  # DASHBOARD — Vue.js (Vite dev server)
+  # ─────────────────────────────────────────
+  dashboard:
+    build:
+      context: ./services/dashboard
+      dockerfile: Dockerfile
+      target: development
+    container_name: iot_dashboard
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    env_file: .env
+    volumes:
+      - ./services/dashboard/src:/app/src:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - iot_network
+
+volumes:
+  broker_data:
+  broker_log:
+  mongo_data:
+
+networks:
+  iot_network:
+    driver: bridge
