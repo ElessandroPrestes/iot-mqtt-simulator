@@ -55,9 +55,10 @@ O projeto foi construído para ser executado nativamente em containers Docker, e
    ```
 
 3. **Subindo a Infraestrutura (Dev):**
-   Execute o build e levante todos os serviços em background. O Docker vai construir as imagens do Node.js (API, Dashboard e Simulator) e iniciar o Mosquitto e o MongoDB.
+   Execute o build e levante todos os serviços em background com o comando atalho do Makefile. O Docker vai construir as imagens do Node.js (API, Dashboard e Simulator) e iniciar o Mosquitto e o MongoDB.
    ```bash
-   docker compose up -d --build
+   make build
+   make up
    ```
 
 4. **Verificando a Execução:**
@@ -73,8 +74,10 @@ O projeto foi construído para ser executado nativamente em containers Docker, e
 
 6. **Parando o Ambiente:**
    ```bash
-   docker compose down
+   make down
    ```
+
+   *(Utilitários extras: Use `make logs` para acompanhar os logs em tempo real, ou `make help` para ver todos os atalhos disponíveis.)*
 
 ---
 
