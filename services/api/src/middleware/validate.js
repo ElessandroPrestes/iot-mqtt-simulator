@@ -2,7 +2,12 @@ const Joi = require('joi');
 
 function validate(schema, target = 'body') {
   return (req, res, next) => {
-    const { error, value } = schema.validate(req[target], { abortEarly: false, convert: true });
+    const { error, value } = schema.validate(req[target], {
+      abortEarly: false,
+      allowUnknown: false,
+      convert: true,
+      stripUnknown: false,
+    });
     if (error) {
       return res.status(400).json({
         success: false,

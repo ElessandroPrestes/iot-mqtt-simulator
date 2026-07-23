@@ -1,59 +1,109 @@
-const authenticate = require('../../../src/middleware/authenticate');
 const jwt = require('jsonwebtoken');
-
-jest.mock('jsonwebtoken');
+const { createAuthenticate } = require('../../../src/middleware/authenticate');
 
 describe('authenticate middleware', () => {
-  let req, res, next;
+  const config = {
+    jwtSecret: 'test-only-jwt-secret-with-32-bytes-minimum',
+    jwtIssuer: 'iot-api-test',
+    jwtAudience: 'iot-dashboard-test',
+    principals: [{
+      id: 'viewer-1',
+      username: 'viewer',
+      role: 'viewer',
+      enabled: true,
+    }],
+  };
+
+  let authenticate;
+  let req;
+  let res;
+  let next;
 
   beforeEach(() => {
+    authenticate = createAuthenticate(config);
     req = { headers: {} };
     res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
     next = jest.fn();
-    process.env.JWT_SECRET = 'test-secret';
   });
 
-  afterEach(() => {
-    delete process.env.JWT_SECRET;
-  });
-
-  it('returns 401 if no authorization header is present', () => {
+  it('returns canonical 401 without a Bearer token', () => {
     authenticate(req, res, next);
+
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ success: false, error: 'Unauthorized: Missing or invalid token' });
+    expect(res.json).toHaveBeenCalledWith({
+      success: false,
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Authentication required',
+        details: [],
+      },
+    });
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('returns 401 if authorization header does not start with Bearer', () => {
-    req.headers.authorization = 'Basic dGVzdDp0ZXN0';
+  it('rejects invalid issuer, audience or algorithm', () => {
+    const token = jwt.sign(
+      { role: 'viewer' },
+      config.jwtSecret,
+      {
+        algorithm: 'HS256',
+        audience: 'wrong-audience',
+        issuer: config.jwtIssuer,
+        subject: 'viewer-1',
+      }
+    );
+    req.headers.authorization = `Bearer ${token}`;
+
     authenticate(req, res, next);
+
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ success: false, error: 'Unauthorized: Missing or invalid token' });
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('returns 401 if token verification fails', () => {
-    req.headers.authorization = 'Bearer invalid-token';
-    jwt.verify.mockImplementation(() => { throw new Error('Invalid token'); });
-    
+  it('rejects a valid token for a disabled or missing principal', () => {
+    const token = jwt.sign(
+      { role: 'operator' },
+      config.jwtSecret,
+      {
+        algorithm: 'HS256',
+        audience: config.jwtAudience,
+        issuer: config.jwtIssuer,
+        subject: 'operator-unknown',
+      }
+    );
+    req.headers.authorization = `Bearer ${token}`;
+
     authenticate(req, res, next);
-    expect(jwt.verify).toHaveBeenCalledWith('invalid-token', 'test-secret');
+
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ success: false, error: 'Unauthorized: Invalid or expired token' });
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('calls next if token is valid', () => {
-    req.headers.authorization = 'Bearer valid-token';
-    const decoded = { username: 'admin' };
-    jwt.verify.mockReturnValue(decoded);
-    
+  it('sets the trusted principal and calls next for a valid token', () => {
+    const token = jwt.sign(
+      { username: 'viewer', role: 'viewer' },
+      config.jwtSecret,
+      {
+        algorithm: 'HS256',
+        audience: config.jwtAudience,
+        issuer: config.jwtIssuer,
+        jwtid: 'token-id',
+        subject: 'viewer-1',
+      }
+    );
+    req.headers.authorization = `Bearer ${token}`;
+
     authenticate(req, res, next);
-    expect(jwt.verify).toHaveBeenCalledWith('valid-token', 'test-secret');
-    expect(req.user).toEqual(decoded);
+
+    expect(req.user).toEqual({
+      id: 'viewer-1',
+      username: 'viewer',
+      role: 'viewer',
+      tokenId: 'token-id',
+    });
     expect(next).toHaveBeenCalled();
   });
 });

@@ -5,11 +5,12 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "jest",
-    "test:coverage": "jest --coverage --coverageThreshold='{\"global\":{\"lines\":90,\"functions\":90,\"branches\":85,\"statements\":90}}'",
+    "test": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage --coverageThreshold='{\"global\":{\"lines\":90,\"functions\":90,\"branches\":85,\"statements\":90}}'",
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "argon2": "^0.45.1",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

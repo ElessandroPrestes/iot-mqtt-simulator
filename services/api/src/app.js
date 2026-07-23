@@ -4,29 +4,66 @@ const helmet  = require('helmet');
 const compression = require('compression');
 const morgan  = require('morgan');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 
 const readingsRouter = require('./routes/readings');
 const sensorsRouter  = require('./routes/sensors');
 const alertsRouter   = require('./routes/alerts');
 const healthRouter   = require('./routes/health');
 const metricsRouter  = require('./routes/metrics');
-const authRouter     = require('./routes/auth');
-const authenticate   = require('./middleware/authenticate');
+const createAuthRouter = require('./routes/auth');
+const authenticateModule = require('./middleware/authenticate');
 const errorHandler   = require('./middleware/errorHandler');
 const logger         = require('./utils/logger');
 const { httpRequestDuration } = require('./services/metricsService');
+const { loadSecurityConfig } = require('./config/security');
 
-function createApp() {
+function createApp(options = {}) {
   const app = express();
+  const securityConfig = options.securityConfig || loadSecurityConfig();
+  const authenticate = typeof authenticateModule.createAuthenticate === 'function'
+    ? authenticateModule.createAuthenticate(securityConfig)
+    : authenticateModule;
 
   // ── Security ──────────────────────────────────────────────────
-  app.use(helmet());
-  app.use(cors({ origin: process.env.CORS_ORIGINS?.split(',') || '*' }));
+  if (securityConfig.trustProxy) app.set('trust proxy', securityConfig.trustProxy);
+  app.disable('x-powered-by');
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        baseUri: ["'none'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+  }));
+  app.use(cors({
+    credentials: true,
+    origin(origin, callback) {
+      if (!origin || securityConfig.corsOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      const error = new Error('Origin is not allowed');
+      error.status = 403;
+      error.code = 'FORBIDDEN';
+      return callback(error);
+    },
+  }));
   app.use(rateLimit({ windowMs: 60_000, max: 300, standardHeaders: true }));
 
   // ── Parsing & Compression ─────────────────────────────────────
   app.use(express.json({ limit: '1mb' }));
   app.use(compression());
+
+  app.use((req, res, next) => {
+    const incomingId = req.get('x-request-id');
+    req.id = incomingId && /^[a-zA-Z0-9._-]{8,128}$/.test(incomingId)
+      ? incomingId
+      : crypto.randomUUID();
+    res.setHeader('X-Request-ID', req.id);
+    next();
+  });
 
   // ── Observabilidade ──────────────────────────────────────────
   app.use(morgan('combined', {
@@ -44,12 +81,35 @@ function createApp() {
   app.use('/api/v1/health',       healthRouter);
   app.use('/metrics',             metricsRouter);
   app.use('/api/v1/metrics',      metricsRouter);
-  app.use('/api/v1/auth',         authRouter);
-  
-  const setupSwagger = require('./config/swagger');
-  setupSwagger(app);
+  const loginLimiter = rateLimit({
+    windowMs: securityConfig.loginWindowMs,
+    max: securityConfig.loginMaxAttempts,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    handler(req, res) {
+      logger.warn('Authentication rate limit exceeded', {
+        correlationId: req.id,
+        event: 'auth.rate_limited',
+      });
+      res.status(429).json({
+        success: false,
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many authentication attempts',
+          details: [],
+        },
+      });
+    },
+  });
 
-  
+  const authRouter = createAuthRouter(securityConfig);
+  app.use('/api/v1/auth/login', loginLimiter);
+  app.use('/api/v1/auth', authRouter);
+
+  const setupSwagger = require('./config/swagger');
+  setupSwagger(app, { enabled: securityConfig.swaggerEnabled });
+
   // Rotas Protegidas
   app.use('/api/v1/readings',     authenticate, readingsRouter);
   app.use('/api/v1/sensors',      authenticate, sensorsRouter);

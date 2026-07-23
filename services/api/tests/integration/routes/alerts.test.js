@@ -2,7 +2,10 @@ const request = require('supertest');
 const { createApp } = require('../../../src/app');
 const Alert         = require('../../../src/models/Alert');
 
-jest.mock('../../../src/middleware/authenticate', () => (req, res, next) => next());
+jest.mock('../../../src/middleware/authenticate', () => (req, res, next) => {
+  req.user = { id: 'operator-1', username: 'operator', role: 'operator' };
+  next();
+});
 
 let app;
 

@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Alert = require('../models/Alert');
 const Joi = require('joi');
 const { successResponse } = require('../utils/responseFormatter');
+const authorize = require('../middleware/authorize');
 
 const querySchema = Joi.object({
   sensorId: Joi.string(),
@@ -111,7 +112,7 @@ router.get('/', async (req, res, next) => {
  *         description: Não autorizado
  */
 // PATCH /api/v1/alerts/:id/resolve
-router.patch('/:id/resolve', async (req, res, next) => {
+router.patch('/:id/resolve', authorize('operator'), async (req, res, next) => {
   try {
     const alert = await Alert.findByIdAndUpdate(
       req.params.id,

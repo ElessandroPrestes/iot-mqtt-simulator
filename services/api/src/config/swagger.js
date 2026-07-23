@@ -30,7 +30,8 @@ const options = {
 
 const swaggerSpec = swaggerJSDoc(options);
 
-const setupSwagger = (app) => {
+const setupSwagger = (app, { enabled = true } = {}) => {
+  if (!enabled) return;
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 };
 
