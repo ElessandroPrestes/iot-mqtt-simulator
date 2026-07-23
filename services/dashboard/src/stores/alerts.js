@@ -21,7 +21,7 @@ export const useAlertsStore = defineStore('alerts', () => {
     loading.value = true;
     try {
       const response = await apiClient.get('/alerts', { params });
-      alerts.value = response.data;
+      alerts.value = response.data.data;
     } catch (e) {
       error.value = e.message;
     } finally {
@@ -33,7 +33,7 @@ export const useAlertsStore = defineStore('alerts', () => {
     try {
       const response = await apiClient.patch(`/alerts/${id}/resolve`);
       const idx = alerts.value.findIndex(a => a._id === id);
-      if (idx !== -1) alerts.value[idx] = response.data;
+      if (idx !== -1) alerts.value[idx] = response.data.data;
     } catch (e) { error.value = e.message; }
   }
 
