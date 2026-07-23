@@ -39,7 +39,7 @@ function createApp() {
   });
 
   // ── Rotas ─────────────────────────────────────────────────────
-  app.get('/health',              healthRouter);
+  app.use('/health',              healthRouter);
   app.use('/metrics',             metricsRouter);
   app.use('/api/v1/readings',     readingsRouter);
   app.use('/api/v1/sensors',      sensorsRouter);

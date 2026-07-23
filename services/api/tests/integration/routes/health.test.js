@@ -20,4 +20,17 @@ describe('GET /health', () => {
     expect(res.body.data).toHaveProperty('version');
     expect(res.body.data.services).toHaveProperty('memory');
   });
+
+  it('retorna status degraded quando mongodb não estiver conectado', async () => {
+    const mongoose = require('mongoose');
+    const originalState = mongoose.connection.readyState;
+    mongoose.connection.readyState = 0; // Desconectado
+
+    const res = await request(app).get('/health');
+    expect(res.status).toBe(503);
+    expect(res.body.data.status).toBe('degraded');
+    expect(res.body.data.services.mongodb.status).toBe('disconnected');
+
+    mongoose.connection.readyState = originalState; // Restaura
+  });
 });

@@ -67,3 +67,16 @@ describe('PATCH /api/v1/alerts/:id/resolve', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('GET /api/v1/alerts - Filtro por data e Erros', () => {
+  it('filtra por from e to', async () => {
+    const res = await request(app).get(`/api/v1/alerts?from=${new Date(Date.now() - 60000).toISOString()}&to=${new Date(Date.now() + 60000).toISOString()}`);
+    expect(res.status).toBe(200);
+  });
+
+  it('deve repassar erro 500 caso o DB falhe', async () => {
+    jest.spyOn(Alert, 'countDocuments').mockRejectedValueOnce(new Error('DB falhou'));
+    const res = await request(app).get('/api/v1/alerts/summary');
+    expect(res.status).toBe(500);
+  });
+});
