@@ -9,6 +9,7 @@ describe('GET /health', () => {
   it('retorna status healthy com mongodb conectado', async () => {
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
     expect(res.body.data.status).toBe('healthy');
     expect(res.body.data).toHaveProperty('timestamp');
     expect(res.body.data).toHaveProperty('uptime');
@@ -28,6 +29,7 @@ describe('GET /health', () => {
 
     const res = await request(app).get('/health');
     expect(res.status).toBe(503);
+    expect(res.body.success).toBe(true);
     expect(res.body.data.status).toBe('degraded');
     expect(res.body.data.services.mongodb.status).toBe('disconnected');
 

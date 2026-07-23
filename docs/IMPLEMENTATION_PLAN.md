@@ -45,7 +45,7 @@
 | 1 | **B1** | Rota `readings.js` chama `Reading` diretamente — ignora `readingService` | `services/api/src/routes/readings.js` | ✅ Corrigido |
 | 2 | **B2** | Store `sensors.js` usa `response.data.data` (duplo) — interceptor já retorna envelope | `services/dashboard/src/stores/sensors.js` L26, L37 | ✅ Corrigido |
 | 3 | **B3** | Store `alerts.js` tem a mesma inconsistência de duplo `.data` | `services/dashboard/src/stores/alerts.js` | ✅ Corrigido |
-| 4 | **B4** | Testes de integração não validam `success: true` no envelope da resposta | `services/api/tests/integration/routes/*.test.js` | 🔴 Aberto |
+| 4 | **B4** | Testes de integração não validam `success: true` no envelope da resposta | `services/api/tests/integration/routes/*.test.js` | ✅ Corrigido |
 | 5 | **B5** | Testes Vue de components e composables estão vazios (só `.gitkeep`) | `services/dashboard/tests/unit/components/` | 🔴 Aberto |
 
 #### 🟠 Funcionalidades Ausentes
@@ -92,6 +92,8 @@
 
 > **Objetivo:** Garantir que o que existe funciona corretamente antes de avançar.
 
+> **💡 Regra de Refatoração (SDD):** Ao refatorar rotas para extrair lógica para Services (padrão Repository), **NUNCA** remova às cegas os imports dos Models (Mongoose) dos arquivos de teste de integração. Os testes de integração (especialmente os blocos `beforeEach`) frequentemente utilizam chamadas diretas como `Model.insertMany()` para simular o banco de dados. Remover esse import causará `ReferenceError` silencioso ou imediato na CI.
+
 #### TASK-002 — Corrigir rota `readings.js` para usar `readingService` (B1)
 
 - **Status:** ✅ **Concluído** (commit `6c2d7db`)
@@ -120,7 +122,7 @@
 
 #### TASK-004 — Completar testes de contrato da API (B4)
 
-- **Status:** 🔴 Aberto
+- **Status:** ✅ **Concluído**
 - **Prioridade:** P1
 - **Arquivos:** `services/api/tests/integration/routes/*.test.js`, `tests/unit/utils/`
 - **O que fazer:**
@@ -298,9 +300,9 @@
 
 ## 🏁 Definição de "Projeto Concluído" (Case Empresarial)
 
-- [ ] **TASK-002** — Rota `readings.js` usa `readingService` corretamente
-- [ ] **TASK-003** — Stores do dashboard sem duplo `.data`
-- [ ] **TASK-004** — Testes da API validam contrato `{ success, data, meta }`
+- [x] **TASK-002** — Rota `readings.js` usa `readingService` corretamente
+- [x] **TASK-003** — Stores do dashboard sem duplo `.data`
+- [x] **TASK-004** — Testes da API validam contrato `{ success, data, meta }`
 - [ ] **TASK-005** — Testes de componentes Vue existem e passam
 - [ ] **TASK-006** — CI GitHub Actions verde no push para `develop` e `main`
 - [ ] **TASK-007** — Deduplicação de alertas funcionando
@@ -323,3 +325,4 @@
 | 2026-07-23 | — | SPECs 002~005 criadas e aprovadas |
 | 2026-07-23 | TASK-002 | ✅ Rota readings.js refatorada para usar readingService (62/62 testes) |
 | 2026-07-23 | TASK-003 | ✅ Duplo .data corrigido nos stores sensors.js e alerts.js (25/25 testes) |
+| 2026-07-23 | TASK-004 | ✅ Testes de contrato (B4) concluídos + Fix da CI (ReferenceError Reading) (89/89 testes) |

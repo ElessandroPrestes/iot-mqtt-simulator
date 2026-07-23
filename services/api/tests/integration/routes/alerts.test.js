@@ -17,6 +17,7 @@ describe('GET /api/v1/alerts', () => {
   it('retorna lista de alertas', async () => {
     const res = await request(app).get('/api/v1/alerts');
     expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
     expect(res.body).toHaveProperty('data');
     expect(res.body.data.length).toBeGreaterThan(0);
   });
@@ -24,18 +25,22 @@ describe('GET /api/v1/alerts', () => {
   it('filtra por level', async () => {
     const res = await request(app).get('/api/v1/alerts?level=critical');
     expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
     expect(res.body.data.every(a => a.level === 'critical')).toBe(true);
   });
 
   it('filtra por resolved', async () => {
     const res = await request(app).get('/api/v1/alerts?resolved=false');
     expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
     expect(res.body.data.every(a => !a.resolved)).toBe(true);
   });
 
   it('retorna 400 para level inválido', async () => {
     const res = await request(app).get('/api/v1/alerts?level=invalid');
     expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body).toHaveProperty('error');
   });
 });
 
@@ -45,6 +50,7 @@ describe('GET /api/v1/alerts/summary', () => {
   it('retorna resumo de contagens', async () => {
     const res = await request(app).get('/api/v1/alerts/summary');
     expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
     expect(res.body.data).toHaveProperty('total');
     expect(res.body.data).toHaveProperty('unresolved');
     expect(res.body.data).toHaveProperty('critical');
@@ -57,6 +63,7 @@ describe('PATCH /api/v1/alerts/:id/resolve', () => {
     const [alert] = await Alert.insertMany([SAMPLE[0]]);
     const res = await request(app).patch(`/api/v1/alerts/${alert._id}/resolve`);
     expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
     expect(res.body.data.resolved).toBe(true);
     expect(res.body.data.resolvedAt).toBeDefined();
   });
@@ -65,6 +72,8 @@ describe('PATCH /api/v1/alerts/:id/resolve', () => {
     const { Types } = require('mongoose');
     const res = await request(app).patch(`/api/v1/alerts/${new Types.ObjectId()}/resolve`);
     expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body).toHaveProperty('error');
   });
 });
 
@@ -72,11 +81,14 @@ describe('GET /api/v1/alerts - Filtro por data e Erros', () => {
   it('filtra por from e to', async () => {
     const res = await request(app).get(`/api/v1/alerts?from=${new Date(Date.now() - 60000).toISOString()}&to=${new Date(Date.now() + 60000).toISOString()}`);
     expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
   });
 
   it('deve repassar erro 500 caso o DB falhe', async () => {
     jest.spyOn(Alert, 'countDocuments').mockRejectedValueOnce(new Error('DB falhou'));
     const res = await request(app).get('/api/v1/alerts/summary');
     expect(res.status).toBe(500);
+    expect(res.body.success).toBe(false);
+    expect(res.body).toHaveProperty('error');
   });
 });
