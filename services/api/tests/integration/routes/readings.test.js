@@ -19,7 +19,7 @@ describe('GET /api/v1/readings', () => {
     const res = await request(app).get('/api/v1/readings');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('data');
-    expect(res.body).toHaveProperty('pagination');
+    expect(res.body).toHaveProperty('meta');
     expect(res.body.data.length).toBeGreaterThan(0);
   });
 
@@ -55,7 +55,7 @@ describe('GET /api/v1/readings', () => {
     const res = await request(app).get('/api/v1/readings?limit=2&page=1');
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(2);
-    expect(res.body.pagination.limit).toBe(2);
+    expect(res.body.meta.limit).toBe(2);
   });
 });
 
@@ -81,6 +81,6 @@ describe('GET /api/v1/readings/stats', () => {
     const res = await request(app).get('/api/v1/readings/stats');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('data');
-    expect(res.body).toHaveProperty('since');
+    expect(res.body.meta).toHaveProperty('since');
   });
 });

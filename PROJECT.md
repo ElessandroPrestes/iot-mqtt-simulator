@@ -172,11 +172,13 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
     │       ├── app.js       # Factory Express app
     │       ├── index.js     # Bootstrap (MongoDB + HTTP + Socket.io + MQTT)
     │       ├── config/      # Configuração centralizada
-    │       ├── middleware/  # errorHandler, requestLogger, validate
+    │       ├── middleware/  # errorHandler (com contratos estruturados), requestLogger, validate
     │       ├── models/      # Reading.js, Alert.js (Mongoose)
-    │       ├── routes/      # readings, sensors, alerts, health, metrics
+    │       ├── repositories/# readingRepository.js, alertRepository.js (abstração do Mongoose)
+    │       ├── routes/      # readings, sensors, alerts, health, metrics (com envelopes de resposta)
     │       ├── services/    # mqttService, alertService, metricsService, readingService
-    │       ├── utils/       # logger.js, thresholds.js
+    │       ├── strategies/  # thresholdStrategy.js
+    │       ├── utils/       # logger.js, responseFormatter.js, thresholds.js
     │       └── websocket/   # socketServer.js
     ├── simulator/           # Node.js ESM simulator
     │   └── src/
@@ -185,13 +187,13 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
     │       └── sensors/     # temperatureSensor, pressureSensor, humiditySensor, vibrationSensor
     ├── dashboard/           # Vue 3 SPA
     │   └── src/
-    │       ├── App.vue
+    │       ├── App.vue      # Raiz (injeta ToastNotification globalmente)
     │       ├── main.js
-    │       ├── api/         # Clientes HTTP axios
-    │       ├── components/  # alerts/, charts/, layout/, sensors/, ui/
+    │       ├── api/         # Clientes HTTP axios (com interceptors para JSON envelope)
+    │       ├── components/  # alerts/, charts/, layout/, sensors/, ui/ (BaseButton, BaseCard, ToastNotification)
     │       ├── composables/ # Vue composables
     │       ├── router/      # vue-router
-    │       ├── stores/      # Pinia: alerts.js, sensors.js, connection.js
+    │       ├── stores/      # Pinia: alerts.js, sensors.js, connection.js, notification.js
     │       ├── styles/      # CSS global
     │       └── views/       # DashboardView, AlertsView, HistoryView, SensorsView
     └── broker/              # Mosquitto config

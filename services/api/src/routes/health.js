@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const mongoose = require('mongoose');
+const { successResponse } = require('../utils/responseFormatter');
 
 router.get('/', async (req, res) => {
   const mongoState = mongoose.connection.readyState;
@@ -8,7 +9,7 @@ router.get('/', async (req, res) => {
   const status = mongoOk ? 'healthy' : 'degraded';
   const code   = mongoOk ? 200 : 503;
 
-  res.status(code).json({
+  const data = {
     status,
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
@@ -17,7 +18,9 @@ router.get('/', async (req, res) => {
       mongodb: { status: mongoOk ? 'connected' : 'disconnected', state: mongoState },
       memory: process.memoryUsage(),
     },
-  });
+  };
+
+  res.status(code).json(successResponse(data));
 });
 
 module.exports = router;

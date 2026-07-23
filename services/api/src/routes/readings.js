@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const Reading = require('../models/Reading');
 const Joi = require('joi');
+const { successResponse } = require('../utils/responseFormatter');
 
 const querySchema = Joi.object({
   sensorId:  Joi.string(),
@@ -16,7 +17,13 @@ const querySchema = Joi.object({
 router.get('/', async (req, res, next) => {
   try {
     const { error, value } = querySchema.validate(req.query);
-    if (error) return res.status(400).json({ error: error.details[0].message });
+    if (error) {
+      const err = new Error('Invalid query parameters');
+      err.status = 400;
+      err.code = 'VALIDATION_ERROR';
+      err.details = error.details;
+      return next(err);
+    }
 
     const filter = {};
     if (value.sensorId) filter.sensorId = value.sensorId;
@@ -34,10 +41,12 @@ router.get('/', async (req, res, next) => {
       Reading.countDocuments(filter),
     ]);
 
-    res.json({
-      data: readings,
-      pagination: { page: value.page, limit: value.limit, total, pages: Math.ceil(total / value.limit) },
-    });
+    res.json(successResponse(readings, { 
+      page: value.page, 
+      limit: value.limit, 
+      total, 
+      pages: Math.ceil(total / value.limit) 
+    }));
   } catch (err) { next(err); }
 });
 
@@ -50,7 +59,7 @@ router.get('/latest', async (req, res, next) => {
       { $replaceRoot: { newRoot: '$doc' } },
       { $sort: { sensorId: 1 } },
     ]);
-    res.json({ data: latest });
+    res.json(successResponse(latest));
   } catch (err) { next(err); }
 });
 
@@ -72,7 +81,7 @@ router.get('/stats', async (req, res, next) => {
       }},
       { $sort: { '_id.sensorId': 1 } },
     ]);
-    res.json({ data: stats, since });
+    res.json(successResponse(stats, { since }));
   } catch (err) { next(err); }
 });
 

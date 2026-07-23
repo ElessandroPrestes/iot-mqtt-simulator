@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Reading = require('../models/Reading');
+const { successResponse } = require('../utils/responseFormatter');
 
 // GET /api/v1/sensors — lista sensores únicos com última leitura
 router.get('/', async (req, res, next) => {
@@ -27,7 +28,7 @@ router.get('/', async (req, res, next) => {
       }},
       { $sort: { sensorId: 1 } },
     ]);
-    res.json({ data: sensors });
+    res.json(successResponse(sensors));
   } catch (err) { next(err); }
 });
 
@@ -40,8 +41,13 @@ router.get('/:id', async (req, res, next) => {
       .limit(limit)
       .lean();
 
-    if (!readings.length) return res.status(404).json({ error: 'Sensor não encontrado' });
-    res.json({ data: readings });
+    if (!readings.length) {
+      const err = new Error('Sensor não encontrado');
+      err.status = 404;
+      err.code = 'NOT_FOUND';
+      return next(err);
+    }
+    res.json(successResponse(readings));
   } catch (err) { next(err); }
 });
 
