@@ -23,7 +23,9 @@ export const useSensorsStore = defineStore('sensors', () => {
     loading.value = true;
     try {
       const response = await apiClient.get('/readings/latest');
-      response.data.data.forEach(r => readings.value.set(r.sensorId, r));
+      // O interceptor do client.js já retorna response.data (envelope completo).
+      // response.data é o array de leituras — não usar .data.data.
+      response.data.forEach(r => readings.value.set(r.sensorId, r));
     } catch (e) {
       error.value = e.message;
     } finally {
@@ -34,7 +36,7 @@ export const useSensorsStore = defineStore('sensors', () => {
   async function fetchStats(since = 3600000) {
     try {
       const response = await apiClient.get('/readings/stats', { params: { since } });
-      stats.value = response.data.data;
+      stats.value = response.data;
     } catch (e) { error.value = e.message; }
   }
 

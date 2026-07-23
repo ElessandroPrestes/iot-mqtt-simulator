@@ -68,8 +68,11 @@ describe('useSensorsStore', () => {
   });
 
   it('fetchLatest popula readings via API', async () => {
+    // O interceptor do client.js retorna response.data diretamente.
+    // Simulamos o que o interceptor entrega: { success, data: [...] }
     apiClient.get.mockResolvedValueOnce({
-      data: { data: [{ sensorId: 'HUMI-01', value: 60, status: 'normal' }] },
+      success: true,
+      data: [{ sensorId: 'HUMI-01', value: 60, status: 'normal' }],
     });
     const store = useSensorsStore();
     await store.fetchLatest();
@@ -86,7 +89,8 @@ describe('useSensorsStore', () => {
   });
 
   it('fetchStats popula stats', async () => {
-    apiClient.get.mockResolvedValueOnce({ data: { data: [{ _id: 'x', avg: 55 }] } });
+    // Interceptor retorna o envelope: { success, data: [...] }
+    apiClient.get.mockResolvedValueOnce({ success: true, data: [{ _id: 'x', avg: 55 }] });
     const store = useSensorsStore();
     await store.fetchStats();
     expect(store.stats).toHaveLength(1);

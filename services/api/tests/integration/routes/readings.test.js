@@ -1,6 +1,6 @@
-const request  = require('supertest');
-const { createApp } = require('../../../src/app');
-const Reading  = require('../../../src/models/Reading');
+const request           = require('supertest');
+const { createApp }     = require('../../../src/app');
+const readingRepository = require('../../../src/repositories/readingRepository');
 
 let app;
 
@@ -92,7 +92,7 @@ describe('GET /api/v1/readings - Filtro por data e Erros', () => {
   });
 
   it('deve repassar erro 500 caso o DB falhe', async () => {
-    jest.spyOn(Reading, 'aggregate').mockRejectedValueOnce(new Error('DB falhou'));
+    jest.spyOn(readingRepository, 'aggregate').mockRejectedValueOnce(new Error('DB falhou'));
     const res = await request(app).get('/api/v1/readings/stats');
     expect(res.status).toBe(500);
   });
