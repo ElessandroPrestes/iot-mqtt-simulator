@@ -42,9 +42,9 @@
 
 | # | ID | Problema | Arquivo | Status |
 |---|---|---|---|---|
-| 1 | **B1** | Rota `readings.js` chama `Reading` diretamente — ignora `readingService` | `services/api/src/routes/readings.js` | 🔴 Aberto |
-| 2 | **B2** | Store `sensors.js` usa `response.data.data` (duplo) — interceptor já retorna envelope | `services/dashboard/src/stores/sensors.js` L26, L37 | 🔴 Aberto |
-| 3 | **B3** | Store `alerts.js` tem a mesma inconsistência de duplo `.data` | `services/dashboard/src/stores/alerts.js` | 🔴 Aberto |
+| 1 | **B1** | Rota `readings.js` chama `Reading` diretamente — ignora `readingService` | `services/api/src/routes/readings.js` | ✅ Corrigido |
+| 2 | **B2** | Store `sensors.js` usa `response.data.data` (duplo) — interceptor já retorna envelope | `services/dashboard/src/stores/sensors.js` L26, L37 | ✅ Corrigido |
+| 3 | **B3** | Store `alerts.js` tem a mesma inconsistência de duplo `.data` | `services/dashboard/src/stores/alerts.js` | ✅ Corrigido |
 | 4 | **B4** | Testes de integração não validam `success: true` no envelope da resposta | `services/api/tests/integration/routes/*.test.js` | 🔴 Aberto |
 | 5 | **B5** | Testes Vue de components e composables estão vazios (só `.gitkeep`) | `services/dashboard/tests/unit/components/` | 🔴 Aberto |
 
@@ -94,7 +94,7 @@
 
 #### TASK-002 — Corrigir rota `readings.js` para usar `readingService` (B1)
 
-- **Status:** 🔴 Aberto
+- **Status:** ✅ **Concluído** (commit `6c2d7db`)
 - **Prioridade:** P0 (crítico)
 - **Arquivo:** `services/api/src/routes/readings.js`
 - **O que fazer:**
@@ -107,7 +107,7 @@
 
 #### TASK-003 — Corrigir duplo `.data` nas stores do dashboard (B2, B3)
 
-- **Status:** 🔴 Aberto
+- **Status:** ✅ **Concluído** (commit `6c2d7db`)
 - **Prioridade:** P0 (causa bug em runtime)
 - **Arquivos:** `services/dashboard/src/stores/sensors.js`, `services/dashboard/src/stores/alerts.js`
 - **O que fazer:**
@@ -320,3 +320,6 @@
 | 2026-07-22 | — | Bootstrap do projeto (Discovery Agent) |
 | 2026-07-22 | TASK-001 | Evolução arquitetural fullstack (SPEC-001) — implementada parcialmente |
 | 2026-07-23 | — | Análise de gaps e criação deste plano |
+| 2026-07-23 | — | SPECs 002~005 criadas e aprovadas |
+| 2026-07-23 | TASK-002 | ✅ Rota readings.js refatorada para usar readingService (62/62 testes) |
+| 2026-07-23 | TASK-003 | ✅ Duplo .data corrigido nos stores sensors.js e alerts.js (25/25 testes) |
