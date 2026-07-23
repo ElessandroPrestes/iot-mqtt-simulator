@@ -220,7 +220,7 @@
 
 #### TASK-010 — Grafana Dashboard (I5)
 
-- **Status:** 🟡 Parcial
+- **Status:** ✅ Completo
 - **Prioridade:** P2
 - **Arquivos:** `infrastructure/grafana/`
 - **O que fazer:**
@@ -256,7 +256,7 @@
 
 #### TASK-012 — README.md Completo (D1, D3, D4)
 
-- **Status:** 🟡 Básico (4KB)
+- **Status:** ✅ Completo
 - **Prioridade:** P3
 - **Arquivo:** `README.md`
 - **O que fazer:**
@@ -306,11 +306,11 @@
 - [x] **TASK-005** — Testes de componentes Vue existem e passam
 - [x] **TASK-006** — CI GitHub Actions verde no push para `develop` e `main`
 - [x] **TASK-007** — Deduplicação de alertas funcionando
-- [ ] **TASK-008** — API protegida com JWT
+- [x] **TASK-008** — API protegida com JWT
 - [x] **TASK-009** — nginx no stack de produção
-- [ ] **TASK-010** — Grafana com dashboard pré-configurado
+- [x] **TASK-010** — Grafana com dashboard pré-configurado
 - [ ] **TASK-011** — Swagger em `/api/docs`
-- [ ] **TASK-012** — README.md onboarding completo
+- [x] **TASK-012** — README.md onboarding completo
 - [ ] **TASK-013** — Tag `v1.0.0` criada, `main` atualizada
 
 ---
@@ -329,3 +329,5 @@
 | 2026-07-23 | TASK-007 | ✅ Deduplicação de alertas no repositório e auto-resolução criadas com sucesso |
 | 2026-07-23 | TASK-008 | ✅ Autenticação JWT implementada e rotas da API protegidas |
 | 2026-07-23 | TASK-009 | ✅ Configuração do nginx concluída e adicionada ao docker-compose de produção |
+| 2026-07-23 | TASK-010 | ✅ Grafana e Prometheus configurados e rodando corretamente |
+| 2026-07-23 | TASK-012 | ✅ README.md finalizado com infos de arquitetura, docs de testes e criação do CONTRIBUTING.md |

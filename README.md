@@ -8,6 +8,42 @@ Plataforma fullstack de simulação e monitoramento IoT industrial em tempo real
 
 Este projeto é gerido rigorosamente através do **Universal SDD Framework (Spec-Driven Development)**, garantindo que o código, a arquitetura e a documentação evoluam em sincronia e sob supervisão contínua, tanto humana quanto de Inteligência Artificial.
 
+## 🏭 Caso de Uso Empresarial
+
+O **IoT MQTT Simulator** é uma arquitetura de referência para telemetria industrial (Indústria 4.0).
+Ele demonstra como ingerir milhares de eventos por segundo gerados por sensores (Vibração, Temperatura, Pressão e Umidade),
+processar estes dados através de um broker de mensagens ultrarrápido (Mosquitto), e distribuí-los para:
+1. **Armazenamento de Séries Temporais:** MongoDB com coleções `timeseries` para análise histórica.
+2. **Monitoramento em Tempo Real:** Dashboard Vue.js reativo via WebSockets.
+3. **Alertas e Notificações:** Mecanismo de threshold que gera alertas críticos quando os sensores ultrapassam limites de segurança.
+4. **Observabilidade:** Coleta de métricas operacionais pelo Prometheus, exibidas no Grafana.
+
+---
+
+## 🏗️ Arquitetura
+
+```mermaid
+graph TD
+    %% Componentes
+    S[IoT Simulator<br/>(Node.js)] -->|MQTT| B(MQTT Broker<br/>Mosquitto)
+    B <-->|MQTT| A[API Backend<br/>(Node.js/Express)]
+    A -->|Mongoose| M[(MongoDB<br/>Timeseries)]
+    A -->|Socket.io| D[Dashboard Vue.js<br/>(Tempo Real)]
+    D -->|HTTP REST| A
+    N[Nginx Reverse Proxy] -->|Port 80/443| D
+    N -->|Proxy Pass| A
+    P[Prometheus] -->|Scrape :3000/metrics| A
+    G[Grafana] -->|Query| P
+    
+    classDef node fill:#1e1e1e,stroke:#4caf50,stroke-width:2px,color:#fff;
+    classDef db fill:#003b00,stroke:#8bc34a,stroke-width:2px,color:#fff;
+    classDef proxy fill:#002b36,stroke:#268bd2,stroke-width:2px,color:#fff;
+    
+    class S,A,D node;
+    class M db;
+    class N,P,G proxy;
+```
+
 ---
 
 ## 🤖 Para Inteligências Artificiais
@@ -54,8 +90,16 @@ O projeto foi construído para ser executado nativamente em containers Docker, e
    cp .env.example .env
    ```
 
-3. **Subindo a Infraestrutura (Dev):**
-   Execute o build e levante todos os serviços em background com o comando atalho do Makefile. O Docker vai construir as imagens do Node.js (API, Dashboard e Simulator) e iniciar o Mosquitto e o MongoDB.
+3. **Subindo a Infraestrutura (Dev vs Prod):**
+   Execute o build e levante todos os serviços em background com o comando atalho do Makefile. 
+   O Docker vai construir as imagens do Node.js (API, Dashboard e Simulator) e iniciar o Mosquitto, MongoDB, Nginx, Prometheus e Grafana.
+   
+   Para ambiente de Produção (Stack completa com Monitoramento e Proxy Nginx):
+   ```bash
+   make prod-up
+   ```
+
+   Para ambiente de Desenvolvimento (Sem Grafana/Nginx):
    ```bash
    make build
    make up
@@ -67,12 +111,24 @@ O projeto foi construído para ser executado nativamente em containers Docker, e
    ```
    *Certifique-se de que os containers `iot_broker`, `iot_mongo`, `iot_api`, `iot_simulator` e `iot_dashboard` estejam com status "Up".*
 
-5. **Acessando a Aplicação:**
-   - **Dashboard (Vue.js):** [http://localhost:5173](http://localhost:5173)
-   - **API (Healthcheck):** [http://localhost:3000/health](http://localhost:3000/health)
-   - **Métricas Prometheus:** [http://localhost:9090/metrics](http://localhost:9090/metrics)
+5. **Acessando a Aplicação (Produção `make prod-up`):**
+   - **Dashboard (Nginx):** [http://localhost](http://localhost)
+   - **API (Nginx Proxied):** [http://localhost/api/v1/health](http://localhost/api/v1/health)
+   - **Grafana:** [http://localhost:3001](http://localhost:3001) *(User: `admin`, Pass: `admin`)*
+   - **Prometheus UI:** [http://localhost:9091](http://localhost:9091)
+   
+   *(Em Dev `make up`: Dashboard em `localhost:5173` e API em `localhost:3000`)*
 
-6. **Parando o Ambiente:**
+6. **Rodando os Testes e Cobertura:**
+   A API possui testes automatizados (unitários e integração). Para executá-los:
+   ```bash
+   cd services/api
+   npm test               # Roda a suíte de testes
+   npm run test:coverage  # Gera o relatório de cobertura em /coverage
+   ```
+   *(A cobertura atual deve se manter em no mínimo 90% conforme diretrizes do SDD)*
+
+7. **Parando o Ambiente:**
    ```bash
    make down
    ```
