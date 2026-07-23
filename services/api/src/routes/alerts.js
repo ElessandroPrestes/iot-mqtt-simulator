@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const Alert = require('../models/Alert');
 const Joi = require('joi');
+const { successResponse } = require('../utils/responseFormatter');
 
 const querySchema = Joi.object({
   sensorId: Joi.string(),
@@ -16,7 +17,13 @@ const querySchema = Joi.object({
 router.get('/', async (req, res, next) => {
   try {
     const { error, value } = querySchema.validate(req.query, { convert: true });
-    if (error) return res.status(400).json({ error: error.details[0].message });
+    if (error) {
+      const err = new Error('Invalid query parameters');
+      err.status = 400;
+      err.code = 'VALIDATION_ERROR';
+      err.details = error.details;
+      return next(err);
+    }
 
     const filter = {};
     if (value.sensorId !== undefined) filter.sensorId = value.sensorId;
@@ -34,10 +41,12 @@ router.get('/', async (req, res, next) => {
       Alert.countDocuments(filter),
     ]);
 
-    res.json({
-      data,
-      pagination: { page: value.page, limit: value.limit, total, pages: Math.ceil(total / value.limit) },
-    });
+    res.json(successResponse(data, { 
+      page: value.page, 
+      limit: value.limit, 
+      total, 
+      pages: Math.ceil(total / value.limit) 
+    }));
   } catch (err) { next(err); }
 });
 
@@ -49,8 +58,13 @@ router.patch('/:id/resolve', async (req, res, next) => {
       { resolved: true, resolvedAt: new Date() },
       { new: true }
     );
-    if (!alert) return res.status(404).json({ error: 'Alerta não encontrado' });
-    res.json({ data: alert });
+    if (!alert) {
+      const err = new Error('Alerta não encontrado');
+      err.status = 404;
+      err.code = 'NOT_FOUND';
+      return next(err);
+    }
+    res.json(successResponse(alert));
   } catch (err) { next(err); }
 });
 
@@ -63,7 +77,7 @@ router.get('/summary', async (req, res, next) => {
       Alert.countDocuments({ level: 'critical', resolved: false }),
       Alert.countDocuments({ level: 'warning',  resolved: false }),
     ]);
-    res.json({ data: { total, unresolved, critical, warning } });
+    res.json(successResponse({ total, unresolved, critical, warning }));
   } catch (err) { next(err); }
 });
 

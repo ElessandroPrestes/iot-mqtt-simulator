@@ -22,8 +22,8 @@ export const useSensorsStore = defineStore('sensors', () => {
   async function fetchLatest() {
     loading.value = true;
     try {
-      const { data } = await apiClient.get('/readings/latest');
-      data.data.forEach(r => readings.value.set(r.sensorId, r));
+      const response = await apiClient.get('/readings/latest');
+      response.data.forEach(r => readings.value.set(r.sensorId, r));
     } catch (e) {
       error.value = e.message;
     } finally {
@@ -33,8 +33,8 @@ export const useSensorsStore = defineStore('sensors', () => {
 
   async function fetchStats(since = 3600000) {
     try {
-      const { data } = await apiClient.get('/readings/stats', { params: { since } });
-      stats.value = data.data;
+      const response = await apiClient.get('/readings/stats', { params: { since } });
+      stats.value = response.data;
     } catch (e) { error.value = e.message; }
   }
 

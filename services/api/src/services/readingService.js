@@ -1,4 +1,4 @@
-const Reading = require('../models/Reading');
+const readingRepository = require('../repositories/readingRepository');
 
 async function findAll({ sensorId, type, status, from, to, limit = 100, page = 1 }) {
   const filter = {};
@@ -13,15 +13,15 @@ async function findAll({ sensorId, type, status, from, to, limit = 100, page = 1
 
   const skip = (page - 1) * limit;
   const [data, total] = await Promise.all([
-    Reading.find(filter).sort({ timestamp: -1 }).skip(skip).limit(limit).lean(),
-    Reading.countDocuments(filter),
+    readingRepository.findPaginated(filter, skip, limit),
+    readingRepository.count(filter),
   ]);
 
   return { data, total, page, limit, pages: Math.ceil(total / limit) };
 }
 
 async function findLatestPerSensor() {
-  return Reading.aggregate([
+  return readingRepository.aggregate([
     { $sort: { timestamp: -1 } },
     { $group: { _id: '$sensorId', doc: { $first: '$$ROOT' } } },
     { $replaceRoot: { newRoot: '$doc' } },
@@ -31,7 +31,7 @@ async function findLatestPerSensor() {
 
 async function findStats(sinceMs = 3_600_000) {
   const since = new Date(Date.now() - sinceMs);
-  return Reading.aggregate([
+  return readingRepository.aggregate([
     { $match: { timestamp: { $gte: since } } },
     { $group: {
       _id: { sensorId: '$sensorId', type: '$type' },

@@ -1,8 +1,8 @@
 const mqtt = require('mqtt');
 const logger = require('../utils/logger');
-const { classify } = require('../utils/thresholds');
-const Reading = require('../models/Reading');
-const Alert = require('../models/Alert');
+const strategyContext = require('../strategies/thresholdStrategy');
+const readingRepository = require('../repositories/readingRepository');
+const alertRepository = require('../repositories/alertRepository');
 const { mqttMessagesTotal, sensorValueGauge, alertsTotal } = require('./metricsService');
 
 let io; // Socket.io instance
@@ -39,11 +39,11 @@ function init(socketIo) {
 
       mqttMessagesTotal.inc({ topic, sensor_type: sensorType });
 
-      const status = classify(sensorType, data.value);
+      const status = strategyContext.classify(sensorType, data.value);
       sensorValueGauge.set({ sensor_id: data.sensorId, sensor_type: sensorType, unit: data.unit }, data.value);
 
       // Persistência no MongoDB
-      const reading = await Reading.create({
+      const reading = await readingRepository.create({
         sensorId:  data.sensorId,
         type:      sensorType,
         value:     data.value,
@@ -57,7 +57,7 @@ function init(socketIo) {
       // Gerar alerta se necessário
       if (status !== 'normal') {
         alertsTotal.inc({ level: status, sensor_type: sensorType });
-        const alert = await Alert.create({
+        const alert = await alertRepository.create({
           sensorId:  data.sensorId,
           type:      sensorType,
           level:     status,
@@ -66,12 +66,12 @@ function init(socketIo) {
           message:   `Sensor ${data.sensorId}: ${data.value}${data.unit} (${status.toUpperCase()})`,
           timestamp: new Date(data.timestamp),
         });
-        io?.emit('alert:new', alert.toObject());
+        io?.emit('alert:new', alert.toObject ? alert.toObject() : alert);
         logger.warn('Alert generated', { sensorId: data.sensorId, status, value: data.value });
       }
 
       // Broadcast em tempo real via WebSocket
-      io?.emit('reading:new', { ...reading.toObject(), status });
+      io?.emit('reading:new', { ...(reading.toObject ? reading.toObject() : reading), status });
 
     } catch (err) {
       logger.error('Error processing MQTT message', { topic, error: err.message });

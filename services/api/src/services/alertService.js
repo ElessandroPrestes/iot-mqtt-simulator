@@ -1,4 +1,4 @@
-const Alert = require('../models/Alert');
+const alertRepository = require('../repositories/alertRepository');
 
 async function findAll({ sensorId, level, resolved, from, to, limit = 100, page = 1 }) {
   const filter = {};
@@ -13,23 +13,22 @@ async function findAll({ sensorId, level, resolved, from, to, limit = 100, page 
 
   const skip = (page - 1) * limit;
   const [data, total] = await Promise.all([
-    Alert.find(filter).sort({ timestamp: -1 }).skip(skip).limit(limit).lean(),
-    Alert.countDocuments(filter),
+    alertRepository.findPaginated(filter, skip, limit),
+    alertRepository.count(filter),
   ]);
 
   return { data, total, page, limit, pages: Math.ceil(total / limit) };
 }
 
 async function resolve(id) {
-  return Alert.findByIdAndUpdate(
+  return alertRepository.updateById(
     id,
-    { resolved: true, resolvedAt: new Date() },
-    { new: true }
+    { resolved: true, resolvedAt: new Date() }
   );
 }
 
 async function countUnresolved() {
-  return Alert.countDocuments({ resolved: false });
+  return alertRepository.count({ resolved: false });
 }
 
 module.exports = { findAll, resolve, countUnresolved };
