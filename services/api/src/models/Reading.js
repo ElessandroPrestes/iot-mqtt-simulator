@@ -9,7 +9,7 @@ const readingSchema = new mongoose.Schema(
     status:    { type: String, enum: ['normal', 'warning', 'critical'], default: 'normal' },
     isAnomaly: { type: Boolean, default: false },
     metadata:  { type: mongoose.Schema.Types.Mixed, default: {} },
-    timestamp: { type: Date, default: Date.now, index: true },
+    timestamp: { type: Date, default: Date.now },
   },
   {
     timeseries: {
