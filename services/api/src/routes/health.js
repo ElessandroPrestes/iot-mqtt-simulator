@@ -12,7 +12,7 @@ const { successResponse } = require('../utils/responseFormatter');
  *       200:
  *         description: API está saudável.
  *       503:
- *         description: API está degradada (ex: sem conexão com banco de dados).
+ *         description: "API está degradada (ex: sem conexão com banco de dados)."
  */
 router.get('/', async (req, res) => {
   const mongoState = mongoose.connection.readyState;
