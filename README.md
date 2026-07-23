@@ -67,6 +67,30 @@ Você **deve** ler os arquivos `PROJECT.md` e `AGENTS.md` na raiz deste reposit�
 
 ---
 
+## 🔐 Segurança e roadmap OWASP
+
+O projeto já utiliza controles básicos como autenticação JWT, Helmet, CORS,
+rate limiting, validação Joi e autenticação no broker MQTT. O próximo ciclo de
+hardening foi especificado para tratar os riscos do
+[OWASP Top 10:2025](https://owasp.org/Top10/) e do
+[OWASP API Security Top 10:2023](https://owasp.org/API-Security/), adotando
+[OWASP ASVS 5.0.0 Level 2](https://owasp.org/www-project-application-security-verification-standard/)
+como nível-alvo de verificação.
+
+O escopo aprovado inclui autenticação e sessão seguras, RBAC, proteção do
+Socket.io, validação de payloads MQTT, TLS, isolamento de serviços, gestão de
+secrets, auditoria, alertas e gates de segurança no CI:
+
+- [SPEC-006 — Hardening de Segurança OWASP](specs/SPEC-006-owasp-security-hardening.md)
+- [TASK-014 — Hardening de Segurança OWASP](tasks/TASK-014-owasp-security-hardening.md)
+
+> **Estado atual:** a SPEC foi aprovada e a TASK está pronta, mas a implementação
+> ainda não foi iniciada. O projeto não declara certificação ou conformidade
+> OWASP ASVS Level 2 até que todos os controles, testes e evidências previstos
+> estejam concluídos e revisados.
+
+---
+
 ## 🚀 Instalação e Execução Local
 
 O projeto foi construído para ser executado nativamente em containers Docker, eliminando atritos com versões de Node.js e bancos de dados. A boa prática ditada pelo SDD é **manter os ambientes isolados**; portanto, nunca tente rodar os serviços soltos no Host para desenvolvimento, utilize sempre a orquestração oficial.
