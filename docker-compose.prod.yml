@@ -74,9 +74,41 @@ services:
     networks:
       - iot_network
 
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    restart: always
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - iot_network
+    depends_on:
+      - api
+
+  grafana:
+    image: grafana/grafana-oss:11.1.0
+    restart: always
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infrastructure/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - iot_network
+    depends_on:
+      - prometheus
+
 volumes:
   broker_data:
   mongo_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   iot_network:
