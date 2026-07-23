@@ -2,6 +2,8 @@ const request = require('supertest');
 const { createApp } = require('../../../src/app');
 const Reading = require('../../../src/models/Reading');
 
+jest.mock('../../../src/middleware/authenticate', () => (req, res, next) => next());
+
 let app;
 
 beforeAll(() => { app = createApp(); });

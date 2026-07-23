@@ -1,6 +1,8 @@
 const request = require('supertest');
 const { createApp } = require('../../../src/app');
-const Alert   = require('../../../src/models/Alert');
+const Alert         = require('../../../src/models/Alert');
+
+jest.mock('../../../src/middleware/authenticate', () => (req, res, next) => next());
 
 let app;
 

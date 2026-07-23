@@ -10,6 +10,8 @@ const sensorsRouter  = require('./routes/sensors');
 const alertsRouter   = require('./routes/alerts');
 const healthRouter   = require('./routes/health');
 const metricsRouter  = require('./routes/metrics');
+const authRouter     = require('./routes/auth');
+const authenticate   = require('./middleware/authenticate');
 const errorHandler   = require('./middleware/errorHandler');
 const logger         = require('./utils/logger');
 const { httpRequestDuration } = require('./services/metricsService');
@@ -41,9 +43,12 @@ function createApp() {
   // ── Rotas ─────────────────────────────────────────────────────
   app.use('/health',              healthRouter);
   app.use('/metrics',             metricsRouter);
-  app.use('/api/v1/readings',     readingsRouter);
-  app.use('/api/v1/sensors',      sensorsRouter);
-  app.use('/api/v1/alerts',       alertsRouter);
+  app.use('/api/v1/auth',         authRouter);
+  
+  // Rotas Protegidas
+  app.use('/api/v1/readings',     authenticate, readingsRouter);
+  app.use('/api/v1/sensors',      authenticate, sensorsRouter);
+  app.use('/api/v1/alerts',       authenticate, alertsRouter);
 
   app.use(errorHandler);
   return app;
