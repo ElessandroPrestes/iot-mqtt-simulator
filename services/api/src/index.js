@@ -6,6 +6,7 @@ const { createSocketServer } = require('./websocket/socketServer');
 const { loadSecurityConfig } = require('./config/security');
 const mqttService = require('./services/mqttService');
 const logger = require('./utils/logger');
+const { installFatalProcessHandlers } = require('./utils/processLifecycle');
 
 async function bootstrap() {
   const securityConfig = loadSecurityConfig();
@@ -24,23 +25,49 @@ async function bootstrap() {
   const io = createSocketServer(server, securityConfig);
 
   // MQTT Processor
-  mqttService.init(io);
+  const mqttClient = mqttService.init(io);
 
   // Start
   const port = process.env.API_PORT || 3000;
   server.listen(port, () => logger.info(`API listening on :${port}`));
 
-  // Graceful shutdown
+  let shuttingDown = false;
   const shutdown = async (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     logger.info(`Received ${signal}. Shutting down...`);
-    await mongoose.disconnect();
-    server.close(() => process.exit(0));
+
+    const closeMqtt = new Promise((resolve) => {
+      mqttClient.end(false, {}, resolve);
+    });
+    const closeHttp = new Promise((resolve) => {
+      if (!server.listening) return resolve();
+      return server.close(resolve);
+    });
+
+    await Promise.allSettled([
+      closeMqtt,
+      closeHttp,
+      mongoose.disconnect(),
+    ]);
+    process.exit(signal === 'SIGTERM' || signal === 'SIGINT' ? 0 : 1);
   };
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT',  () => shutdown('SIGINT'));
+  installFatalProcessHandlers(shutdown);
+
+  return { app, io, mqttClient, server, shutdown };
 }
 
-bootstrap().catch((err) => {
-  console.error('Bootstrap error:', err);
-  process.exit(1);
-});
+if (require.main === module) {
+  bootstrap().catch((err) => {
+    logger.error('Bootstrap failed', {
+      event: 'process.bootstrap_failed',
+      error: err.message,
+      stack: err.stack,
+    });
+    process.exit(1);
+  });
+}
+
+module.exports = { bootstrap };

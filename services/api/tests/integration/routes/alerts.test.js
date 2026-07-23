@@ -47,6 +47,18 @@ describe('GET /api/v1/alerts', () => {
     expect(res.body.success).toBe(false);
     expect(res.body).toHaveProperty('error');
   });
+
+  it('rejeita operador NoSQL e propriedades desconhecidas', async () => {
+    const noSql = await request(app)
+      .get('/api/v1/alerts')
+      .query({ 'sensorId[$ne]': 'TEMP-01' });
+    const unknown = await request(app)
+      .get('/api/v1/alerts')
+      .query({ unexpected: 'value' });
+
+    expect(noSql.status).toBe(400);
+    expect(unknown.status).toBe(400);
+  });
 });
 
 describe('GET /api/v1/alerts/summary', () => {
@@ -79,6 +91,17 @@ describe('PATCH /api/v1/alerts/:id/resolve', () => {
     expect(res.status).toBe(404);
     expect(res.body.success).toBe(false);
     expect(res.body).toHaveProperty('error');
+  });
+
+  it('rejeita id malformado e body inesperado', async () => {
+    const malformed = await request(app).patch('/api/v1/alerts/not-an-id/resolve');
+    const [alert] = await Alert.insertMany([SAMPLE[0]]);
+    const unexpectedBody = await request(app)
+      .patch(`/api/v1/alerts/${alert._id}/resolve`)
+      .send({ role: 'operator' });
+
+    expect(malformed.status).toBe(400);
+    expect(unexpectedBody.status).toBe(400);
   });
 });
 

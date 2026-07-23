@@ -4,6 +4,7 @@ const { validate } = require('../middleware/validate');
 const authService = require('../services/authService');
 const { parseCookies, serializeRefreshCookie } = require('../utils/cookies');
 const { successResponse } = require('../utils/responseFormatter');
+const { auditSecurityEvent } = require('../middleware/securityAudit');
 
 const loginSchema = Joi.object({
   username: Joi.string().trim().min(3).max(64).pattern(/^[a-zA-Z0-9._-]+$/).required(),
@@ -37,12 +38,14 @@ function requireTrustedBrowserRequest(config) {
     if ((origin && !config.corsOrigins.includes(origin))
       || (config.production && !origin)
       || requestedWith !== 'XMLHttpRequest') {
+      auditSecurityEvent(req, 'auth.browser_request', 'denied');
       return res.status(403).json({
         success: false,
         error: {
           code: 'FORBIDDEN',
           message: 'Request origin is not allowed',
           details: [],
+          correlationId: req.id,
         },
       });
     }
@@ -71,6 +74,8 @@ function createAuthRouter(config) {
       );
       const session = await authService.createSession(principal, config);
       setRefreshCookie(res, session.refreshToken, config);
+      req.user = principal;
+      auditSecurityEvent(req, 'auth.login', 'success');
 
       return res.json(successResponse({
         accessToken: session.accessToken,
@@ -78,6 +83,7 @@ function createAuthRouter(config) {
         user: session.principal,
       }));
     } catch (error) {
+      auditSecurityEvent(req, 'auth.login', 'failure');
       return next(error);
     }
   });
@@ -90,6 +96,8 @@ function createAuthRouter(config) {
         config
       );
       setRefreshCookie(res, session.refreshToken, config);
+      req.user = session.principal;
+      auditSecurityEvent(req, 'auth.refresh', 'success');
 
       return res.json(successResponse({
         accessToken: session.accessToken,
@@ -98,6 +106,7 @@ function createAuthRouter(config) {
       }));
     } catch (error) {
       clearRefreshCookie(res, config);
+      auditSecurityEvent(req, 'auth.refresh', 'failure');
       return next(error);
     }
   });
@@ -107,8 +116,10 @@ function createAuthRouter(config) {
       const cookies = parseCookies(req.headers.cookie);
       await authService.revokeSession(cookies[config.refreshCookieName]);
       clearRefreshCookie(res, config);
+      auditSecurityEvent(req, 'auth.logout', 'success');
       return res.json(successResponse(null));
     } catch (error) {
+      auditSecurityEvent(req, 'auth.logout', 'failure');
       return next(error);
     }
   });

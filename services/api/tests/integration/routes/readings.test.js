@@ -62,6 +62,18 @@ describe('GET /api/v1/readings', () => {
     expect(res.body).toHaveProperty('error');
   });
 
+  it('rejeita operador NoSQL e propriedades desconhecidas', async () => {
+    const noSql = await request(app)
+      .get('/api/v1/readings')
+      .query({ 'sensorId[$ne]': 'TEMP-01' });
+    const unknown = await request(app)
+      .get('/api/v1/readings')
+      .query({ unexpected: 'value' });
+
+    expect(noSql.status).toBe(400);
+    expect(unknown.status).toBe(400);
+  });
+
   it('aplica paginação via query params', async () => {
     const res = await request(app).get('/api/v1/readings?limit=2&page=1');
     expect(res.status).toBe(200);
@@ -96,6 +108,14 @@ describe('GET /api/v1/readings/stats', () => {
     expect(res.body.success).toBe(true);
     expect(res.body).toHaveProperty('data');
     expect(res.body.meta).toHaveProperty('since');
+  });
+
+  it('rejeita janelas fora do limite e query desconhecida', async () => {
+    const excessive = await request(app).get('/api/v1/readings/stats?since=9999999999');
+    const unknown = await request(app).get('/api/v1/readings/stats?unexpected=true');
+
+    expect(excessive.status).toBe(400);
+    expect(unknown.status).toBe(400);
   });
 });
 

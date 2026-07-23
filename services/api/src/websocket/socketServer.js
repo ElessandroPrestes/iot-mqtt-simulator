@@ -1,6 +1,7 @@
 const { Server } = require('socket.io');
 const logger = require('../utils/logger');
 const { verifyAccessToken } = require('../middleware/authenticate');
+const { auditSecurityEvent } = require('../middleware/securityAudit');
 
 const SENSOR_ID_PATTERN = /^[A-Z][A-Z0-9_-]{2,63}$/;
 const MAX_SENSOR_SUBSCRIPTIONS = 50;
@@ -13,8 +14,17 @@ function socketAuthentication(config) {
         throw new Error('Missing access token');
       }
       socket.data.user = verifyAccessToken(token, config);
+      auditSecurityEvent({
+        id: socket.id,
+        ip: socket.handshake.address,
+        user: socket.data.user,
+      }, 'auth.websocket', 'success');
       next();
     } catch {
+      auditSecurityEvent({
+        id: socket.id,
+        ip: socket.handshake.address,
+      }, 'auth.websocket', 'denied');
       const error = new Error('Authentication required');
       error.data = { code: 'UNAUTHORIZED' };
       next(error);

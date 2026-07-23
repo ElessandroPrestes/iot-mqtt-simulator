@@ -1,17 +1,24 @@
 const router = require('express').Router();
 const Joi = require('joi');
 const readingService = require('../services/readingService');
+const { validate } = require('../middleware/validate');
 const { successResponse } = require('../utils/responseFormatter');
 
+const sensorId = Joi.string().pattern(/^[A-Z][A-Z0-9_-]{2,63}$/);
 const querySchema = Joi.object({
-  sensorId:  Joi.string(),
+  sensorId,
   type:      Joi.string().valid('temperature', 'pressure', 'humidity', 'vibration'),
   status:    Joi.string().valid('normal', 'warning', 'critical'),
   from:      Joi.date().iso(),
   to:        Joi.date().iso(),
   limit:     Joi.number().integer().min(1).max(1000).default(100),
   page:      Joi.number().integer().min(1).default(1),
-});
+}).unknown(false);
+
+const statsQuerySchema = Joi.object({
+  since: Joi.number().integer().min(1_000).max(604_800_000).default(3_600_000),
+}).unknown(false);
+const emptyQuerySchema = Joi.object({}).unknown(false);
 
 /**
  * @swagger
@@ -54,18 +61,9 @@ const querySchema = Joi.object({
  *         description: Não autorizado
  */
 // GET /api/v1/readings
-router.get('/', async (req, res, next) => {
+router.get('/', validate(querySchema, 'query'), async (req, res, next) => {
   try {
-    const { error, value } = querySchema.validate(req.query);
-    if (error) {
-      const err = new Error('Invalid query parameters');
-      err.status = 400;
-      err.code = 'VALIDATION_ERROR';
-      err.details = error.details;
-      return next(err);
-    }
-
-    const result = await readingService.findAll(value);
+    const result = await readingService.findAll(req.query);
 
     res.json(successResponse(result.data, {
       page:  result.page,
@@ -91,7 +89,7 @@ router.get('/', async (req, res, next) => {
  *         description: Não autorizado
  */
 // GET /api/v1/readings/latest
-router.get('/latest', async (req, res, next) => {
+router.get('/latest', validate(emptyQuerySchema, 'query'), async (req, res, next) => {
   try {
     const latest = await readingService.findLatestPerSensor();
     res.json(successResponse(latest));
@@ -119,9 +117,9 @@ router.get('/latest', async (req, res, next) => {
  *         description: Não autorizado
  */
 // GET /api/v1/readings/stats
-router.get('/stats', async (req, res, next) => {
+router.get('/stats', validate(statsQuerySchema, 'query'), async (req, res, next) => {
   try {
-    const sinceMs = parseInt(req.query.since) || 3600000;
+    const sinceMs = req.query.since;
     const since = new Date(Date.now() - sinceMs);
 
     const stats = await readingService.findStats(sinceMs);

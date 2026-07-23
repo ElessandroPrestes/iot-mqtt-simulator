@@ -1,12 +1,13 @@
 const router = require('express').Router();
 const { register } = require('../services/metricsService');
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
+    const metrics = await register.metrics();
     res.set('Content-Type', register.contentType);
-    res.end(await register.metrics());
+    res.end(metrics);
   } catch (err) {
-    res.status(500).end(err.message);
+    next(err);
   }
 });
 

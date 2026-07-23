@@ -3,7 +3,10 @@ const mqtt = require('mqtt');
 const strategyContext = require('../../../src/strategies/thresholdStrategy');
 const readingRepository = require('../../../src/repositories/readingRepository');
 const alertRepository = require('../../../src/repositories/alertRepository');
-const { alertsTotal } = require('../../../src/services/metricsService');
+const {
+  alertsTotal,
+  mqttMessagesRejectedTotal,
+} = require('../../../src/services/metricsService');
 
 jest.mock('mqtt');
 jest.mock('../../../src/strategies/thresholdStrategy');
@@ -16,6 +19,7 @@ jest.mock('../../../src/utils/logger', () => ({
 }));
 jest.mock('../../../src/services/metricsService', () => ({
   mqttMessagesTotal: { inc: jest.fn() },
+  mqttMessagesRejectedTotal: { inc: jest.fn() },
   sensorValueGauge: { set: jest.fn() },
   alertsTotal: { inc: jest.fn() }
 }));
@@ -54,10 +58,16 @@ describe('mqttService', () => {
     strategyContext.classify.mockReturnValue('warning');
     alertRepository.findActiveAlert.mockResolvedValue(null);
 
-    const payload = JSON.stringify({ sensorId: 'S-1', value: 50, unit: 'C', timestamp: Date.now() });
-    await messageHandler('factory/sensors/temperature/S-1', Buffer.from(payload));
+    const payload = JSON.stringify({
+      sensorId: 'TEMP-01',
+      type: 'temperature',
+      value: 50,
+      unit: '°C',
+      timestamp: new Date().toISOString(),
+    });
+    await messageHandler('factory/sensors/temperature/TEMP-01', Buffer.from(payload));
 
-    expect(alertRepository.findActiveAlert).toHaveBeenCalledWith('S-1', 'warning');
+    expect(alertRepository.findActiveAlert).toHaveBeenCalledWith('TEMP-01', 'warning');
     expect(alertRepository.create).toHaveBeenCalled();
     expect(alertsTotal.inc).toHaveBeenCalledWith({ level: 'warning', sensor_type: 'temperature' });
   });
@@ -67,10 +77,16 @@ describe('mqttService', () => {
     strategyContext.classify.mockReturnValue('warning');
     alertRepository.findActiveAlert.mockResolvedValue({ id: 'existing-alert' });
 
-    const payload = JSON.stringify({ sensorId: 'S-1', value: 50, unit: 'C', timestamp: Date.now() });
-    await messageHandler('factory/sensors/temperature/S-1', Buffer.from(payload));
+    const payload = JSON.stringify({
+      sensorId: 'TEMP-01',
+      type: 'temperature',
+      value: 50,
+      unit: '°C',
+      timestamp: new Date().toISOString(),
+    });
+    await messageHandler('factory/sensors/temperature/TEMP-01', Buffer.from(payload));
 
-    expect(alertRepository.findActiveAlert).toHaveBeenCalledWith('S-1', 'warning');
+    expect(alertRepository.findActiveAlert).toHaveBeenCalledWith('TEMP-01', 'warning');
     expect(alertRepository.create).not.toHaveBeenCalled();
     expect(alertsTotal.inc).not.toHaveBeenCalled();
   });
@@ -79,10 +95,59 @@ describe('mqttService', () => {
     mqttService.init({});
     strategyContext.classify.mockReturnValue('normal');
 
-    const payload = JSON.stringify({ sensorId: 'S-2', value: 25, unit: 'C', timestamp: Date.now() });
-    await messageHandler('factory/sensors/temperature/S-2', Buffer.from(payload));
+    const payload = JSON.stringify({
+      sensorId: 'TEMP-02',
+      type: 'temperature',
+      value: 25,
+      unit: '°C',
+      timestamp: new Date().toISOString(),
+    });
+    await messageHandler('factory/sensors/temperature/TEMP-02', Buffer.from(payload));
 
-    expect(alertRepository.resolveAlertsBySensor).toHaveBeenCalledWith('S-2');
+    expect(alertRepository.resolveAlertsBySensor).toHaveBeenCalledWith('TEMP-02');
     expect(alertRepository.create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['invalid JSON', 'factory/sensors/temperature/TEMP-01', Buffer.from('{')],
+    ['invalid topic', '../admin', Buffer.from('{}')],
+    [
+      'mismatched sensor',
+      'factory/sensors/temperature/TEMP-01',
+      Buffer.from(JSON.stringify({
+        sensorId: 'TEMP-02',
+        type: 'temperature',
+        value: 20,
+        unit: '°C',
+        timestamp: new Date().toISOString(),
+      })),
+    ],
+    [
+      'unknown property',
+      'factory/sensors/temperature/TEMP-01',
+      Buffer.from(JSON.stringify({
+        sensorId: 'TEMP-01',
+        type: 'temperature',
+        value: 20,
+        unit: '°C',
+        timestamp: new Date().toISOString(),
+        $where: 'sleep(1000)',
+      })),
+    ],
+    [
+      'oversized payload',
+      'factory/sensors/temperature/TEMP-01',
+      Buffer.alloc(mqttService.MAX_MQTT_PAYLOAD_BYTES + 1),
+    ],
+  ])('rejects %s without persistence or broadcast', async (_case, topic, payload) => {
+    const socketIo = { emit: jest.fn() };
+    mqttService.init(socketIo);
+
+    await messageHandler(topic, payload);
+
+    expect(readingRepository.create).not.toHaveBeenCalled();
+    expect(alertRepository.create).not.toHaveBeenCalled();
+    expect(socketIo.emit).not.toHaveBeenCalled();
+    expect(mqttMessagesRejectedTotal.inc).toHaveBeenCalled();
   });
 });

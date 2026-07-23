@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const mongoose = require('mongoose');
+const mqttService = require('../services/mqttService');
 const { successResponse } = require('../utils/responseFormatter');
 
 /**
@@ -17,18 +18,19 @@ const { successResponse } = require('../utils/responseFormatter');
 router.get('/', async (req, res) => {
   const mongoState = mongoose.connection.readyState;
   const mongoOk = mongoState === 1;
+  const mqtt = mqttService.getStatus();
+  const healthy = mongoOk && mqtt.connected;
 
-  const status = mongoOk ? 'healthy' : 'degraded';
-  const code   = mongoOk ? 200 : 503;
+  const status = healthy ? 'healthy' : 'degraded';
+  const code   = healthy ? 200 : 503;
 
   const data = {
     status,
     timestamp: new Date().toISOString(),
-    uptime: Math.floor(process.uptime()),
     version: process.env.npm_package_version || '1.0.0',
     services: {
-      mongodb: { status: mongoOk ? 'connected' : 'disconnected', state: mongoState },
-      memory: process.memoryUsage(),
+      mongodb: { status: mongoOk ? 'connected' : 'disconnected' },
+      mqtt: { status: mqtt.status },
     },
   };
 

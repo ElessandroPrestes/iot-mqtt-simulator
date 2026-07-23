@@ -6,7 +6,14 @@ client.collectDefaultMetrics({ register });
 const mqttMessagesTotal = new client.Counter({
   name: 'mqtt_messages_total',
   help: 'Total de mensagens MQTT recebidas',
-  labelNames: ['topic', 'sensor_type'],
+  labelNames: ['sensor_type', 'outcome'],
+  registers: [register],
+});
+
+const mqttMessagesRejectedTotal = new client.Counter({
+  name: 'mqtt_messages_rejected_total',
+  help: 'Total de mensagens MQTT rejeitadas antes do processamento',
+  labelNames: ['reason'],
   registers: [register],
 });
 
@@ -24,6 +31,13 @@ const alertsTotal = new client.Counter({
   registers: [register],
 });
 
+const securityEventsTotal = new client.Counter({
+  name: 'security_events_total',
+  help: 'Total de eventos de autenticação, autorização e limitação',
+  labelNames: ['event', 'outcome'],
+  registers: [register],
+});
+
 const httpRequestDuration = new client.Histogram({
   name: 'http_request_duration_seconds',
   help: 'Duração das requisições HTTP',
@@ -35,7 +49,9 @@ const httpRequestDuration = new client.Histogram({
 module.exports = {
   register,
   mqttMessagesTotal,
+  mqttMessagesRejectedTotal,
   sensorValueGauge,
   alertsTotal,
+  securityEventsTotal,
   httpRequestDuration,
 };

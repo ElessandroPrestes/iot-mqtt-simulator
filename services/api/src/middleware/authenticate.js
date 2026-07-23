@@ -1,7 +1,9 @@
 const jwt = require('jsonwebtoken');
 const { loadSecurityConfig } = require('../config/security');
+const { auditSecurityEvent } = require('./securityAudit');
 
-function unauthorized(res) {
+function unauthorized(req, res, reason) {
+  auditSecurityEvent(req, 'auth.access', 'denied', { reason });
   return res.status(401).json({
     success: false,
     error: {
@@ -38,7 +40,7 @@ function createAuthenticate(config) {
   return (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !/^Bearer [^\s]+$/.test(authHeader)) {
-      return unauthorized(res);
+      return unauthorized(req, res, 'missing_or_malformed_bearer');
     }
 
     const token = authHeader.slice('Bearer '.length);
@@ -47,7 +49,7 @@ function createAuthenticate(config) {
       req.user = verifyAccessToken(token, config);
       return next();
     } catch {
-      return unauthorized(res);
+      return unauthorized(req, res, 'invalid_access_token');
     }
   };
 }

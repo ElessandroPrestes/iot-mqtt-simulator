@@ -80,8 +80,14 @@ describe('Auth Routes (Integration)', () => {
 
     expect(wrongUser.status).toBe(401);
     expect(wrongPassword.status).toBe(401);
-    expect(wrongUser.body).toEqual(wrongPassword.body);
-    expect(wrongUser.body.error.code).toBe('UNAUTHORIZED');
+    for (const response of [wrongUser, wrongPassword]) {
+      expect(response.body.error).toEqual(expect.objectContaining({
+        code: 'UNAUTHORIZED',
+        message: 'Invalid credentials or session',
+        details: [],
+      }));
+      expect(response.body.error.correlationId).toBeDefined();
+    }
   });
 
   it('rejects unknown fields and untrusted browser requests', async () => {

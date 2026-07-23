@@ -17,6 +17,7 @@ const errorHandler   = require('./middleware/errorHandler');
 const logger         = require('./utils/logger');
 const { httpRequestDuration } = require('./services/metricsService');
 const { loadSecurityConfig } = require('./config/security');
+const { auditSecurityEvent } = require('./middleware/securityAudit');
 
 function createApp(options = {}) {
   const app = express();
@@ -28,6 +29,14 @@ function createApp(options = {}) {
   // ── Security ──────────────────────────────────────────────────
   if (securityConfig.trustProxy) app.set('trust proxy', securityConfig.trustProxy);
   app.disable('x-powered-by');
+  app.use((req, res, next) => {
+    const incomingId = req.get('x-request-id');
+    req.id = incomingId && /^[a-zA-Z0-9._-]{8,128}$/.test(incomingId)
+      ? incomingId
+      : crypto.randomUUID();
+    res.setHeader('X-Request-ID', req.id);
+    next();
+  });
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
@@ -50,20 +59,28 @@ function createApp(options = {}) {
       return callback(error);
     },
   }));
-  app.use(rateLimit({ windowMs: 60_000, max: 300, standardHeaders: true }));
+  app.use(rateLimit({
+    windowMs: 60_000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler(req, res) {
+      auditSecurityEvent(req, 'http.rate_limit', 'limited');
+      res.status(429).json({
+        success: false,
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many requests',
+          details: [],
+          correlationId: req.id,
+        },
+      });
+    },
+  }));
 
   // ── Parsing & Compression ─────────────────────────────────────
   app.use(express.json({ limit: '1mb' }));
   app.use(compression());
-
-  app.use((req, res, next) => {
-    const incomingId = req.get('x-request-id');
-    req.id = incomingId && /^[a-zA-Z0-9._-]{8,128}$/.test(incomingId)
-      ? incomingId
-      : crypto.randomUUID();
-    res.setHeader('X-Request-ID', req.id);
-    next();
-  });
 
   // ── Observabilidade ──────────────────────────────────────────
   app.use(morgan('combined', {
@@ -80,7 +97,6 @@ function createApp(options = {}) {
   app.use('/health',              healthRouter);
   app.use('/api/v1/health',       healthRouter);
   app.use('/metrics',             metricsRouter);
-  app.use('/api/v1/metrics',      metricsRouter);
   const loginLimiter = rateLimit({
     windowMs: securityConfig.loginWindowMs,
     max: securityConfig.loginMaxAttempts,
@@ -88,16 +104,14 @@ function createApp(options = {}) {
     legacyHeaders: false,
     skipSuccessfulRequests: true,
     handler(req, res) {
-      logger.warn('Authentication rate limit exceeded', {
-        correlationId: req.id,
-        event: 'auth.rate_limited',
-      });
+      auditSecurityEvent(req, 'auth.login', 'limited');
       res.status(429).json({
         success: false,
         error: {
           code: 'RATE_LIMITED',
           message: 'Too many authentication attempts',
           details: [],
+          correlationId: req.id,
         },
       });
     },
@@ -115,6 +129,12 @@ function createApp(options = {}) {
   app.use('/api/v1/sensors',      authenticate, sensorsRouter);
   app.use('/api/v1/alerts',       authenticate, alertsRouter);
 
+  app.use((req, res, next) => {
+    const error = new Error('Resource not found');
+    error.status = 404;
+    error.code = 'NOT_FOUND';
+    next(error);
+  });
   app.use(errorHandler);
   return app;
 }

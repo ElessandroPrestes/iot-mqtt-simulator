@@ -3,16 +3,23 @@ const Alert = require('../models/Alert');
 const Joi = require('joi');
 const { successResponse } = require('../utils/responseFormatter');
 const authorize = require('../middleware/authorize');
+const { validate } = require('../middleware/validate');
+const { auditSecurityEvent } = require('../middleware/securityAudit');
 
+const sensorId = Joi.string().pattern(/^[A-Z][A-Z0-9_-]{2,63}$/);
 const querySchema = Joi.object({
-  sensorId: Joi.string(),
+  sensorId,
   level:    Joi.string().valid('warning', 'critical'),
   resolved: Joi.boolean(),
   from:     Joi.date().iso(),
   to:       Joi.date().iso(),
   limit:    Joi.number().integer().min(1).max(1000).default(100),
   page:     Joi.number().integer().min(1).default(1),
-});
+}).unknown(false);
+const alertParamsSchema = Joi.object({
+  id: Joi.string().hex().length(24).required(),
+}).unknown(false);
+const emptySchema = Joi.object({}).unknown(false);
 
 /**
  * @swagger
@@ -53,16 +60,9 @@ const querySchema = Joi.object({
  *         description: Não autorizado
  */
 // GET /api/v1/alerts
-router.get('/', async (req, res, next) => {
+router.get('/', validate(querySchema, 'query'), async (req, res, next) => {
   try {
-    const { error, value } = querySchema.validate(req.query, { convert: true });
-    if (error) {
-      const err = new Error('Invalid query parameters');
-      err.status = 400;
-      err.code = 'VALIDATION_ERROR';
-      err.details = error.details;
-      return next(err);
-    }
+    const value = req.query;
 
     const filter = {};
     if (value.sensorId !== undefined) filter.sensorId = value.sensorId;
@@ -112,7 +112,12 @@ router.get('/', async (req, res, next) => {
  *         description: Não autorizado
  */
 // PATCH /api/v1/alerts/:id/resolve
-router.patch('/:id/resolve', authorize('operator'), async (req, res, next) => {
+router.patch(
+  '/:id/resolve',
+  authorize('operator'),
+  validate(alertParamsSchema, 'params'),
+  validate(emptySchema),
+  async (req, res, next) => {
   try {
     const alert = await Alert.findByIdAndUpdate(
       req.params.id,
@@ -125,9 +130,13 @@ router.patch('/:id/resolve', authorize('operator'), async (req, res, next) => {
       err.code = 'NOT_FOUND';
       return next(err);
     }
+    auditSecurityEvent(req, 'alert.resolve', 'success', {
+      alertId: alert.id,
+    });
     res.json(successResponse(alert));
   } catch (err) { next(err); }
-});
+  }
+);
 
 /**
  * @swagger
@@ -144,7 +153,7 @@ router.patch('/:id/resolve', authorize('operator'), async (req, res, next) => {
  *         description: Não autorizado
  */
 // GET /api/v1/alerts/summary
-router.get('/summary', async (req, res, next) => {
+router.get('/summary', validate(emptySchema, 'query'), async (req, res, next) => {
   try {
     const [total, unresolved, critical, warning] = await Promise.all([
       Alert.countDocuments(),

@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const { auditSecurityEvent } = require('./securityAudit');
 
 function validate(schema, target = 'body') {
   return (req, res, next) => {
@@ -9,6 +10,9 @@ function validate(schema, target = 'body') {
       stripUnknown: false,
     });
     if (error) {
+      auditSecurityEvent(req, 'input.validation', 'denied', {
+        target,
+      });
       return res.status(400).json({
         success: false,
         error: {

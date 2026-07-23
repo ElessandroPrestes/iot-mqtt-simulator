@@ -18,6 +18,7 @@ describe('GET /metrics', () => {
     jest.spyOn(register, 'metrics').mockRejectedValueOnce(new Error('Erro interno do registry'));
     const res = await request(app).get('/metrics');
     expect(res.status).toBe(500);
-    expect(res.text).toBe('Erro interno do registry');
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('INTERNAL_SERVER_ERROR');
   });
 });

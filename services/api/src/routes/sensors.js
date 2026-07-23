@@ -1,6 +1,16 @@
 const router = require('express').Router();
 const Reading = require('../models/Reading');
+const Joi = require('joi');
+const { validate } = require('../middleware/validate');
 const { successResponse } = require('../utils/responseFormatter');
+
+const emptyQuerySchema = Joi.object({}).unknown(false);
+const sensorParamsSchema = Joi.object({
+  id: Joi.string().pattern(/^[A-Z][A-Z0-9_-]{2,63}$/).required(),
+}).unknown(false);
+const sensorQuerySchema = Joi.object({
+  limit: Joi.number().integer().min(1).max(1000).default(100),
+}).unknown(false);
 
 /**
  * @swagger
@@ -17,7 +27,7 @@ const { successResponse } = require('../utils/responseFormatter');
  *         description: Não autorizado
  */
 // GET /api/v1/sensors — lista sensores únicos com última leitura
-router.get('/', async (req, res, next) => {
+router.get('/', validate(emptyQuerySchema, 'query'), async (req, res, next) => {
   try {
     const sensors = await Reading.aggregate([
       { $sort: { timestamp: -1 } },
@@ -76,9 +86,13 @@ router.get('/', async (req, res, next) => {
  *         description: Não autorizado
  */
 // GET /api/v1/sensors/:id — histórico de um sensor
-router.get('/:id', async (req, res, next) => {
+router.get(
+  '/:id',
+  validate(sensorParamsSchema, 'params'),
+  validate(sensorQuerySchema, 'query'),
+  async (req, res, next) => {
   try {
-    const limit = parseInt(req.query.limit) || 100;
+    const limit = req.query.limit;
     const readings = await Reading.find({ sensorId: req.params.id })
       .sort({ timestamp: -1 })
       .limit(limit)
@@ -92,6 +106,7 @@ router.get('/:id', async (req, res, next) => {
     }
     res.json(successResponse(readings));
   } catch (err) { next(err); }
-});
+  }
+);
 
 module.exports = router;

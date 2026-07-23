@@ -55,4 +55,12 @@ describe('GET /api/v1/sensors/:id', () => {
     expect(res.body.success).toBe(false);
     expect(res.body).toHaveProperty('error');
   });
+
+  it('rejeita ID malformado e limite excessivo', async () => {
+    const invalidId = await request(app).get('/api/v1/sensors/%24where');
+    const excessive = await request(app).get('/api/v1/sensors/VIBR-01?limit=1001');
+
+    expect(invalidId.status).toBe(400);
+    expect(excessive.status).toBe(400);
+  });
 });
