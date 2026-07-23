@@ -84,3 +84,16 @@ describe('GET /api/v1/readings/stats', () => {
     expect(res.body.meta).toHaveProperty('since');
   });
 });
+
+describe('GET /api/v1/readings - Filtro por data e Erros', () => {
+  it('filtra por from e to', async () => {
+    const res = await request(app).get(`/api/v1/readings?from=${new Date(Date.now() - 60000).toISOString()}&to=${new Date(Date.now() + 60000).toISOString()}`);
+    expect(res.status).toBe(200);
+  });
+
+  it('deve repassar erro 500 caso o DB falhe', async () => {
+    jest.spyOn(Reading, 'aggregate').mockRejectedValueOnce(new Error('DB falhou'));
+    const res = await request(app).get('/api/v1/readings/stats');
+    expect(res.status).toBe(500);
+  });
+});

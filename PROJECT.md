@@ -380,7 +380,24 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 
 ## 12. CI/CD e Deploy
 
-- **CI:** GitHub Actions (.github/workflows/) — **a implementar**
+### Integração Contínua — GitHub Actions
+
+**Arquivo:** `.github/workflows/ci.yml`  
+**Trigger:** Push e Pull Request nas branches `develop` e `main`  
+**ADR:** [ADR-005-cicd.md](adr/ADR-005-cicd.md)
+
+| Job | Serviço | O que executa |
+|---|---|---|
+| `api` | services/api | `npm run test:coverage` (Jest + mongodb-memory-server) |
+| `simulator` | services/simulator | `npm test` (Jest ESM) |
+| `dashboard` | services/dashboard | `npm test` + `npm run build` (Vitest + Vite) |
+| `ci-ok` | — | Gate consolidado — required status check |
+
+> Jobs `api`, `simulator` e `dashboard` rodam em **paralelo**.  
+> O job `ci-ok` só passa se todos os anteriores tiverem sucesso.
+
+### Deploy (manual)
+
 - **Dev:** `docker compose up -d`
 - **Prod:** `docker compose -f docker-compose.prod.yml up -d`
 - **Build imagens:** Multi-stage Dockerfile (development/production targets)
@@ -424,7 +441,7 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 - Thresholds globais por tipo (não por sensor individual)
 - Sem mecanismo de deduplicação de alertas (alerta novo a cada leitura fora do limite)
 - AWS IoT Core e nginx (produção) não implementados
-- GitHub Actions CI/CD não implementado
+- GitHub Actions CD (deploy automático) não implementado — deploy é manual via Docker Compose
 - Sem autenticação/autorização na API REST
 
 ---

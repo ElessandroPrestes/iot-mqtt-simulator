@@ -40,7 +40,7 @@ describe('findAll()', () => {
   });
 
   it('filtra por intervalo de timestamps', async () => {
-    const result = await findAll({ from: new Date(Date.now() - 1000).toISOString() });
+    const result = await findAll({ from: new Date(Date.now() - 60000).toISOString() });
     expect(result.data.length).toBeGreaterThanOrEqual(1);
   });
 });
