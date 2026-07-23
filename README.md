@@ -112,8 +112,8 @@ O projeto foi construído para ser executado nativamente em containers Docker, e
    *Certifique-se de que os containers `iot_broker`, `iot_mongo`, `iot_api`, `iot_simulator` e `iot_dashboard` estejam com status "Up".*
 
 5. **Acessando a Aplicação (Produção `make prod-up`):**
-   - **Dashboard (Nginx):** [http://localhost](http://localhost)
-   - **API (Nginx Proxied):** [http://localhost/api/v1/health](http://localhost/api/v1/health)
+   - **Dashboard (Nginx):** [http://localhost:8080](http://localhost:8080)
+   - **API (Nginx Proxied):** [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health)
    - **Grafana:** [http://localhost:3001](http://localhost:3001) *(User: `admin`, Pass: `admin`)*
    - **Prometheus UI:** [http://localhost:9091](http://localhost:9091)
    
