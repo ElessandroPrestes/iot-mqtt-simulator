@@ -54,20 +54,28 @@ function init(socketIo) {
         timestamp: new Date(data.timestamp),
       });
 
-      // Gerar alerta se necessário
+      // Gerar ou resolver alertas
       if (status !== 'normal') {
-        alertsTotal.inc({ level: status, sensor_type: sensorType });
-        const alert = await alertRepository.create({
-          sensorId:  data.sensorId,
-          type:      sensorType,
-          level:     status,
-          value:     data.value,
-          unit:      data.unit,
-          message:   `Sensor ${data.sensorId}: ${data.value}${data.unit} (${status.toUpperCase()})`,
-          timestamp: new Date(data.timestamp),
-        });
-        io?.emit('alert:new', alert.toObject ? alert.toObject() : alert);
-        logger.warn('Alert generated', { sensorId: data.sensorId, status, value: data.value });
+        const existingAlert = await alertRepository.findActiveAlert(data.sensorId, status);
+        if (!existingAlert) {
+          alertsTotal.inc({ level: status, sensor_type: sensorType });
+          const alert = await alertRepository.create({
+            sensorId:  data.sensorId,
+            type:      sensorType,
+            level:     status,
+            value:     data.value,
+            unit:      data.unit,
+            message:   `Sensor ${data.sensorId}: ${data.value}${data.unit} (${status.toUpperCase()})`,
+            timestamp: new Date(data.timestamp),
+          });
+          io?.emit('alert:new', alert.toObject ? alert.toObject() : alert);
+          logger.warn('Alert generated', { sensorId: data.sensorId, status, value: data.value });
+        }
+      } else {
+        const result = await alertRepository.resolveAlertsBySensor(data.sensorId);
+        if (result && result.modifiedCount > 0) {
+          logger.info('Alerts auto-resolved', { sensorId: data.sensorId, count: result.modifiedCount });
+        }
       }
 
       // Broadcast em tempo real via WebSocket
