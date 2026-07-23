@@ -91,78 +91,127 @@ O projeto foi construído para ser executado nativamente em containers Docker, e
    ```
 
 3. **Subindo a Infraestrutura (Dev vs Prod):**
-   Execute o build e levante todos os serviços em background com o comando atalho do Makefile. 
+   Execute o build e levante todos os serviços em background com os atalhos do Makefile.
    O Docker vai construir as imagens do Node.js (API, Dashboard e Simulator) e iniciar o Mosquitto, MongoDB, Nginx, Prometheus e Grafana.
    
    Para ambiente de Produção (Stack completa com Monitoramento e Proxy Nginx):
    ```bash
+   make prod-build
    make prod-up
    ```
 
-   Para ambiente de Desenvolvimento (Sem Grafana/Nginx):
+   Para ambiente de Desenvolvimento (sem Nginx):
    ```bash
    make build
    make up
    ```
 
 4. **Verificando a Execução:**
+
+   Produção:
+   ```bash
+   docker compose -f docker-compose.prod.yml ps
+   ```
+
+   Desenvolvimento:
    ```bash
    docker compose ps
    ```
-   *Certifique-se de que os containers `iot_broker`, `iot_mongo`, `iot_api`, `iot_simulator` e `iot_dashboard` estejam com status "Up".*
+
+   *Certifique-se de que os serviços `broker`, `mongo`, `api`, `simulator` e `dashboard` estejam com status "Up". Na stack de produção, verifique também `nginx`, `prometheus` e `grafana`.*
 
 5. **Acessando a Aplicação (Produção `make prod-up`):**
    - **Dashboard (Nginx):** [http://localhost:8080](http://localhost:8080)
-   - **API (Nginx Proxied):** [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health)
+   - **Health da API (via Nginx):** [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health)
+   - **Swagger UI (via Nginx):** [http://localhost:8080/api/docs](http://localhost:8080/api/docs)
    - **Grafana:** [http://localhost:3001](http://localhost:3001) *(User: `admin`, Pass: `admin`)*
    - **Prometheus UI:** [http://localhost:9091](http://localhost:9091)
    
-   *(Em Dev `make up`: Dashboard em `localhost:5173` e API em `localhost:3000`)*
+   Em desenvolvimento (`make up`):
+
+   - Dashboard: [http://localhost:5173](http://localhost:5173)
+   - Health da API: [http://localhost:3000/api/v1/health](http://localhost:3000/api/v1/health)
+   - Swagger UI: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
 
 6. **Rodando os Testes e Cobertura:**
+
+   Suíte principal:
    ```bash
-   npm test               # Roda a suíte de testes
-   npm run test:coverage  # Gera o relatório de cobertura em /coverage
+   make test
    ```
-   *(A cobertura atual deve se manter em no mínimo 90% conforme diretrizes do SDD)*
+
+   Testes e cobertura da API:
+   ```bash
+   cd services/api
+   npm test
+   npm run test:coverage
+   ```
+
+   Testes e cobertura do Dashboard:
+   ```bash
+   cd services/dashboard
+   npm test
+   npm run test:coverage
+   ```
+
+   *(A cobertura deve respeitar os limites definidos em `standards/testing.md`.)*
+
+7. **Parando o Ambiente:**
+
+   Produção:
+   ```bash
+   make prod-down
+   ```
+
+   Desenvolvimento:
+   ```bash
+   make down
+   ```
+
+   *(Utilitários extras: use `make logs` para acompanhar os logs em tempo real ou `make help` para ver todos os atalhos disponíveis.)*
+
+### Solução de problemas do proxy
+
+Se `/api/v1/health`, `/api/docs` ou as requisições do Dashboard retornarem `Cannot GET /v1/...` ou `Cannot GET /docs`, valide e recarregue a configuração montada no Nginx:
+
+```bash
+docker compose -f docker-compose.prod.yml exec nginx nginx -t
+docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+```
+
+O proxy deve preservar o prefixo `/api` ao encaminhar as requisições para a API.
 
 ## 📖 Payload MQTT (Exemplos)
 
-O simulador e a API esperam que os dados via MQTT sigam o seguinte padrão JSON para o tópico `iot/sensors/<sensorId>`:
+O simulador e a API esperam que os dados via MQTT sigam o seguinte padrão JSON para o tópico `factory/sensors/<type>/<sensorId>`:
 
 **Leitura Normal (Temperatura)**
 ```json
 {
-  "sensorId": "sensor-temp-01",
-  "type": "temperature",
+  "sensorId": "TEMP-01",
   "value": 24.5,
-  "unit": "C",
-  "timestamp": "2023-10-25T10:00:00Z"
+  "unit": "°C",
+  "timestamp": "2026-07-23T10:00:00.000Z",
+  "isAnomaly": false,
+  "metadata": {}
 }
 ```
 
 **Leitura Crítica (Vibração)**
 ```json
 {
-  "sensorId": "sensor-vib-01",
-  "type": "vibration",
-  "value": 85.0,
+  "sensorId": "VIB-01",
+  "value": 7.2,
   "unit": "mm/s",
-  "timestamp": "2023-10-25T10:05:00Z"
+  "timestamp": "2026-07-23T10:05:00.000Z",
+  "isAnomaly": true,
+  "metadata": {}
 }
 ```
 
-(A engine de regras automaticamente gera um alerta se `value` exceder os limites configurados para aquele tipo de sensor).
+O tipo da leitura é identificado pelo segmento `<type>` do tópico MQTT. A engine de regras gera um alerta automaticamente quando `value` excede os limites configurados para esse tipo de sensor.
 
----
-*Este projeto foi desenvolvido com foco em Boas Práticas de Engenharia de Software, utilizando princípios de SDD (Software Design Document).*
-
-7. **Parando o Ambiente:**
-   ```bash
-   make down
-   ```
-
-   *(Utilitários extras: Use `make logs` para acompanhar os logs em tempo real, ou `make help` para ver todos os atalhos disponíveis.)*
+*Este projeto foi desenvolvido com foco em boas práticas de engenharia de software e Spec-Driven Development (SDD).*
 
 ---
 
