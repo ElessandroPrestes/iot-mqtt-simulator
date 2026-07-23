@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # ─────────────────────────────────────────
   # MQTT BROKER — Eclipse Mosquitto
@@ -10,16 +8,21 @@ services:
     restart: unless-stopped
     ports:
       - "1883:1883"
-      - "9001:9001"      # WebSocket MQTT
+      - "${MQTT_WS_HOST_PORT:-9002}:9001" # WebSocket MQTT (host configurável)
     volumes:
       - ./services/broker/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - ./services/broker/passwd:/mosquitto/config/passwd:ro
       - broker_data:/mosquitto/data
       - broker_log:/mosquitto/log
+    env_file: .env
     networks:
       - iot_network
     healthcheck:
-      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-i", "healthcheck", "-W", "3"]
+      test:
+        [
+          "CMD-SHELL",
+          'mosquitto_pub -u "$$MQTT_USERNAME" -P "$$MQTT_PASSWORD" -t "healthcheck" -m "ping" -i healthcheck',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -303,11 +303,11 @@
 - [x] **TASK-002** — Rota `readings.js` usa `readingService` corretamente
 - [x] **TASK-003** — Stores do dashboard sem duplo `.data`
 - [x] **TASK-004** — Testes da API validam contrato `{ success, data, meta }`
-- [ ] **TASK-005** — Testes de componentes Vue existem e passam
-- [ ] **TASK-006** — CI GitHub Actions verde no push para `develop` e `main`
-- [ ] **TASK-007** — Deduplicação de alertas funcionando
+- [x] **TASK-005** — Testes de componentes Vue existem e passam
+- [x] **TASK-006** — CI GitHub Actions verde no push para `develop` e `main`
+- [x] **TASK-007** — Deduplicação de alertas funcionando
 - [ ] **TASK-008** — API protegida com JWT
-- [ ] **TASK-009** — nginx no stack de produção
+- [x] **TASK-009** — nginx no stack de produção
 - [ ] **TASK-010** — Grafana com dashboard pré-configurado
 - [ ] **TASK-011** — Swagger em `/api/docs`
 - [ ] **TASK-012** — README.md onboarding completo
@@ -321,8 +321,11 @@
 |---|---|---|
 | 2026-07-22 | — | Bootstrap do projeto (Discovery Agent) |
 | 2026-07-22 | TASK-001 | Evolução arquitetural fullstack (SPEC-001) — implementada parcialmente |
-| 2026-07-23 | — | Análise de gaps e criação deste plano |
-| 2026-07-23 | — | SPECs 002~005 criadas e aprovadas |
 | 2026-07-23 | TASK-002 | ✅ Rota readings.js refatorada para usar readingService (62/62 testes) |
 | 2026-07-23 | TASK-003 | ✅ Duplo .data corrigido nos stores sensors.js e alerts.js (25/25 testes) |
 | 2026-07-23 | TASK-004 | ✅ Testes de contrato (B4) concluídos + Fix da CI (ReferenceError Reading) (89/89 testes) |
+| 2026-07-23 | TASK-005 | ✅ Testes de componentes Vue e composables concluídos (48/48 testes passando no Dashboard) |
+| 2026-07-23 | TASK-006 | ✅ CI Validado localmente (api: 89/89, simulator: 24/24, dashboard: 48/48 e build) |
+| 2026-07-23 | TASK-007 | ✅ Deduplicação de alertas no repositório e auto-resolução criadas com sucesso |
+| 2026-07-23 | TASK-008 | ✅ Autenticação JWT implementada e rotas da API protegidas |
+| 2026-07-23 | TASK-009 | ✅ Configuração do nginx concluída e adicionada ao docker-compose de produção |
