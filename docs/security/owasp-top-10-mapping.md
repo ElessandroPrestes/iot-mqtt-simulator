@@ -1,7 +1,8 @@
 # Mapeamento OWASP Top 10 — TASK-014
 
-**Status:** Baseline inicial  
+**Status:** Baseline aprovada para implementação
 **Data:** 2026-07-23
+**Aprovação humana:** 2026-07-23
 
 ## 1. OWASP Top 10:2025
 
@@ -57,4 +58,3 @@
 - [ ] Controles implementados.
 - [ ] Testes e evidências anexados.
 - [ ] Nenhuma categoria aplicável permanece `Fail`.
-

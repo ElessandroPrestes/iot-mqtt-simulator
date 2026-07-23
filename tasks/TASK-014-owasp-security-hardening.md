@@ -2,7 +2,7 @@
 
 ## Status
 
-🟡 **Em andamento — gate de arquitetura**
+🟡 **Em andamento — implementação**
 
 A SPEC-006 foi aprovada por humano em 2026-07-23. Esta TASK deve ser concluída
 antes de qualquer release v1.0.0. Os artefatos de arquitetura e baseline foram
@@ -30,8 +30,8 @@ alvo OWASP ASVS 5.0.0 Level 2 e cobrir adequadamente OWASP Top 10:2025.
 ## Pré-condições
 
 - [x] SPEC-006 aprovada explicitamente por humano.
-- [ ] ADR de autenticação, sessão, autorização, secrets e TLS aprovado.
-- [ ] Baseline ASVS e threat model revisados.
+- [x] ADR de autenticação, sessão, autorização, secrets e TLS aprovado.
+- [x] Baseline ASVS e threat model revisados.
 - [x] Nenhuma atividade da TASK-013 iniciada.
 
 ## Progresso
@@ -40,8 +40,8 @@ alvo OWASP ASVS 5.0.0 Level 2 e cobrir adequadamente OWASP Top 10:2025.
 - [x] Threat model STRIDE criado.
 - [x] Baseline ASVS 5.0.0 Level 2 criada.
 - [x] Matriz OWASP Top 10 Web/API criada.
-- [ ] ADR-006 e riscos residuais aprovados por humano.
-- [ ] Implementação iniciada.
+- [x] ADR-006 e riscos residuais aprovados por humano.
+- [x] Implementação iniciada.
 
 ## 1. Artefatos e modificações necessárias
 

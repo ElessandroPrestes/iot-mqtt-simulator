@@ -1,8 +1,9 @@
 # Threat Model — IoT MQTT Simulator
 
-**Status:** Baseline proposta para revisão humana  
-**Data:** 2026-07-23  
-**Método:** STRIDE + abuse cases  
+**Status:** Baseline aprovada para implementação
+**Data:** 2026-07-23
+**Aprovação humana:** 2026-07-23
+**Método:** STRIDE + abuse cases
 **Escopo:** SPEC-006 / TASK-014
 
 ## 1. Objetivo
@@ -176,9 +177,8 @@ implementado ou exceção humana documentada com prazo e owner.
 
 ## 9. Gate de revisão
 
-- [ ] Ativos e boundaries aprovados.
-- [ ] Ameaças críticas/altas possuem owner e controle.
-- [ ] Abuse cases aprovados.
-- [ ] Riscos residuais aceitos ou devolvidos para revisão.
-- [ ] Threat model aprovado por humano.
-
+- [x] Ativos e boundaries aprovados.
+- [x] Ameaças críticas/altas possuem owner e controle.
+- [x] Abuse cases aprovados.
+- [x] Riscos residuais aceitos.
+- [x] Threat model aprovado por humano.

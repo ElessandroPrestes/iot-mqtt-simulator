@@ -1,7 +1,8 @@
 # Baseline OWASP ASVS 5.0.0 Level 2
 
-**Status:** Baseline inicial — aguardando triagem por requisito e revisão humana  
-**Data:** 2026-07-23  
+**Status:** Baseline aprovada — triagem por requisito em andamento
+**Data:** 2026-07-23
+**Aprovação humana da baseline:** 2026-07-23
 **Nível-alvo:** Level 2  
 **Escopo:** API, Dashboard, Socket.io e controles de infraestrutura dependentes
 
@@ -124,5 +125,4 @@ por capítulo não autoriza marcar automaticamente todos os IDs daquele capítul
 - [ ] Todos os requisitos aplicáveis possuem evidência.
 - [ ] Nenhum requisito aplicável permanece `Fail`.
 - [ ] Exceções possuem aprovação, owner e prazo.
-- [ ] Baseline revisada por humano.
-
+- [x] Baseline revisada por humano.

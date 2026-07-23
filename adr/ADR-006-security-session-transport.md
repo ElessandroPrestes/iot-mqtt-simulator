@@ -1,8 +1,9 @@
 # ADR-006: Autenticação, sessão, autorização, secrets e transporte seguro
 
-**Status:** Proposto — aguardando aprovação humana  
-**Data:** 2026-07-23  
-**SPEC:** [SPEC-006](../specs/SPEC-006-owasp-security-hardening.md)  
+**Status:** Aceito
+**Data:** 2026-07-23
+**Aprovação humana:** 2026-07-23
+**SPEC:** [SPEC-006](../specs/SPEC-006-owasp-security-hardening.md)
 **TASK:** [TASK-014](../tasks/TASK-014-owasp-security-hardening.md)
 
 ## Contexto
@@ -222,10 +223,9 @@ bypass do Nginx.
 
 Nenhum código da TASK-014 deve ser alterado até este ADR ser aceito.
 
-- [ ] Estratégia de principals aprovada.
-- [ ] Estratégia access/refresh token aprovada.
-- [ ] RBAC `viewer`/`operator` aprovado.
-- [ ] Isolamento de portas e TLS aprovado.
-- [ ] Estratégia de secrets aprovada.
-- [ ] ADR aceito por humano.
-
+- [x] Estratégia de principals aprovada.
+- [x] Estratégia access/refresh token aprovada.
+- [x] RBAC `viewer`/`operator` aprovado.
+- [x] Isolamento de portas e TLS aprovado.
+- [x] Estratégia de secrets aprovada.
+- [x] ADR aceito por humano.
