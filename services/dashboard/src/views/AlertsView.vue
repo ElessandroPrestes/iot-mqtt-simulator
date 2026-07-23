@@ -52,7 +52,7 @@
                 v-for="alert in filteredAlerts"
                 :key="alert._id"
                 :alert="alert"
-                :show-resolve="!alert.resolved"
+                :show-resolve="!alert.resolved && authStore.hasRole('operator')"
                 @resolve="alertsStore.resolveAlert($event)"
               />
             </div>
@@ -71,6 +71,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useAlertsStore } from '@/stores/alerts';
+import { useAuthStore } from '@/stores/auth';
 import AppHeader from '@/components/layout/AppHeader.vue';
 import AppSidebar from '@/components/layout/AppSidebar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
@@ -79,6 +80,7 @@ import MetricBadge from '@/components/ui/MetricBadge.vue';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue';
 
 const alertsStore   = useAlertsStore();
+const authStore     = useAuthStore();
 const filterLevel    = ref('');
 const filterResolved = ref('');
 

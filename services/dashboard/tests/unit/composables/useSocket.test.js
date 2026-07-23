@@ -5,6 +5,7 @@ import { useSocket } from '@/composables/useSocket';
 import { useConnectionStore } from '@/stores/connection';
 import { useSensorsStore } from '@/stores/sensors';
 import { useAlertsStore } from '@/stores/alerts';
+import { useAuthStore } from '@/stores/auth';
 import { io } from 'socket.io-client';
 
 vi.mock('socket.io-client');
@@ -17,7 +18,9 @@ describe('useSocket.js', () => {
       id: 'test-socket-id',
       on: vi.fn(),
       disconnect: vi.fn(),
+      connect: vi.fn(),
     };
+    mockSocket.disconnect.mockReturnValue(mockSocket);
     io.mockReturnValue(mockSocket);
     vi.clearAllMocks();
   });
@@ -35,6 +38,13 @@ describe('useSocket.js', () => {
     });
 
     expect(io).toHaveBeenCalled();
+    expect(io).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({
+        auth: { token: null },
+        transports: ['websocket'],
+      })
+    );
     expect(wrapper.vm.socket).toEqual(mockSocket);
 
     expect(mockSocket.on).toHaveBeenCalledWith('connect', expect.any(Function));
@@ -54,6 +64,24 @@ describe('useSocket.js', () => {
     connectCb();
 
     expect(connStore.setStatus).toHaveBeenCalledWith('connected', 'test-socket-id');
+  });
+
+  it('sends the in-memory access token in the handshake', () => {
+    const pinia = createTestingPinia({ createSpy: vi.fn, stubActions: false });
+    const authStore = useAuthStore(pinia);
+    authStore.applySession({
+      accessToken: 'memory-token',
+      user: { role: 'viewer' },
+    });
+
+    mount(TestComponent, {
+      global: { plugins: [pinia] }
+    });
+
+    expect(io).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ auth: { token: 'memory-token' } })
+    );
   });
 
   it('updates stores on new reading and alert events', () => {

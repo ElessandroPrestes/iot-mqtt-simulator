@@ -29,14 +29,33 @@
 
     <div class="w-px h-6 bg-border" />
     <ConnectionStatus />
+    <button
+      type="button"
+      class="text-xs font-mono text-ink-muted hover:text-critical transition-colors"
+      @click="signOut"
+    >
+      sair
+    </button>
   </header>
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router';
 import { useSensorsStore } from '@/stores/sensors';
 import { useAlertsStore } from '@/stores/alerts';
+import { useAuthStore } from '@/stores/auth';
 import ConnectionStatus from '@/components/ui/ConnectionStatus.vue';
 
 const sensorsStore = useSensorsStore();
 const alertsStore  = useAlertsStore();
+const authStore = useAuthStore();
+const router = useRouter();
+
+async function signOut() {
+  try {
+    await authStore.logout();
+  } finally {
+    await router.push({ name: 'login' });
+  }
+}
 </script>
