@@ -1,6 +1,12 @@
 module.exports = {
   testEnvironment: 'node',
   setupFilesAfterEnv: ['./tests/setup.js'],
+  // Aumentado para acomodar o MongoMemoryServer (download de binário
+  // ou ambiente lento). 5s (padrão) é insuficiente em alguns ambientes.
+  testTimeout: 30000,
+  // Roda suítes em série para evitar múltiplas instâncias Mongo
+  // concorrentes que causam conflito de porta e timeout.
+  runInBand: true,
   collectCoverageFrom: [
     'src/**/*.js',
     // Excluídos: arquivos de bootstrap e infraestrutura que requerem
@@ -17,3 +23,4 @@ module.exports = {
   },
   testMatch: ['**/tests/**/*.test.js'],
 };
+

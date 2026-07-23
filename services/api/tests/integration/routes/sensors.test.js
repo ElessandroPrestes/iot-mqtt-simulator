@@ -18,6 +18,7 @@ describe('GET /api/v1/sensors', () => {
   it('retorna lista de sensores únicos', async () => {
     const res = await request(app).get('/api/v1/sensors');
     expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
     expect(res.body.data).toHaveLength(2);
     const ids = res.body.data.map(s => s.sensorId);
     expect(ids).toContain('TEMP-01');
@@ -42,11 +43,14 @@ describe('GET /api/v1/sensors/:id', () => {
   it('retorna histórico do sensor', async () => {
     const res = await request(app).get('/api/v1/sensors/VIBR-01');
     expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
     expect(res.body.data[0].sensorId).toBe('VIBR-01');
   });
 
   it('retorna 404 para sensor inexistente', async () => {
     const res = await request(app).get('/api/v1/sensors/NOPE-99');
     expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body).toHaveProperty('error');
   });
 });

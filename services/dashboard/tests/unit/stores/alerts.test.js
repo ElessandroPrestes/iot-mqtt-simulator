@@ -77,7 +77,8 @@ describe('useAlertsStore', () => {
   });
 
   it('fetchAlerts popula lista via API', async () => {
-    apiClient.get.mockResolvedValueOnce({ data: { data: [makeAlert()] } });
+    // Interceptor retorna o envelope diretamente: { success, data: [...] }
+    apiClient.get.mockResolvedValueOnce({ success: true, data: [makeAlert()] });
     const store = useAlertsStore();
     await store.fetchAlerts();
     expect(store.alerts).toHaveLength(1);
@@ -94,7 +95,8 @@ describe('useAlertsStore', () => {
   it('resolveAlert atualiza alerta na lista', async () => {
     const alert = makeAlert({ _id: 'abc', resolved: false });
     const resolved = { ...alert, resolved: true, resolvedAt: new Date().toISOString() };
-    apiClient.patch.mockResolvedValueOnce({ data: { data: resolved } });
+    // Interceptor retorna o envelope diretamente: { success, data: resolvedAlert }
+    apiClient.patch.mockResolvedValueOnce({ success: true, data: resolved });
     const store = useAlertsStore();
     store.alerts.push(alert);
     await store.resolveAlert('abc');

@@ -1,6 +1,6 @@
 const router = require('express').Router();
-const Reading = require('../models/Reading');
 const Joi = require('joi');
+const readingService = require('../services/readingService');
 const { successResponse } = require('../utils/responseFormatter');
 
 const querySchema = Joi.object({
@@ -25,27 +25,13 @@ router.get('/', async (req, res, next) => {
       return next(err);
     }
 
-    const filter = {};
-    if (value.sensorId) filter.sensorId = value.sensorId;
-    if (value.type)     filter.type     = value.type;
-    if (value.status)   filter.status   = value.status;
-    if (value.from || value.to) {
-      filter.timestamp = {};
-      if (value.from) filter.timestamp.$gte = value.from;
-      if (value.to)   filter.timestamp.$lte = value.to;
-    }
+    const result = await readingService.findAll(value);
 
-    const skip = (value.page - 1) * value.limit;
-    const [readings, total] = await Promise.all([
-      Reading.find(filter).sort({ timestamp: -1 }).skip(skip).limit(value.limit).lean(),
-      Reading.countDocuments(filter),
-    ]);
-
-    res.json(successResponse(readings, { 
-      page: value.page, 
-      limit: value.limit, 
-      total, 
-      pages: Math.ceil(total / value.limit) 
+    res.json(successResponse(result.data, {
+      page:  result.page,
+      limit: result.limit,
+      total: result.total,
+      pages: result.pages,
     }));
   } catch (err) { next(err); }
 });
@@ -53,12 +39,7 @@ router.get('/', async (req, res, next) => {
 // GET /api/v1/readings/latest
 router.get('/latest', async (req, res, next) => {
   try {
-    const latest = await Reading.aggregate([
-      { $sort: { timestamp: -1 } },
-      { $group: { _id: '$sensorId', doc: { $first: '$$ROOT' } } },
-      { $replaceRoot: { newRoot: '$doc' } },
-      { $sort: { sensorId: 1 } },
-    ]);
+    const latest = await readingService.findLatestPerSensor();
     res.json(successResponse(latest));
   } catch (err) { next(err); }
 });
@@ -69,18 +50,7 @@ router.get('/stats', async (req, res, next) => {
     const sinceMs = parseInt(req.query.since) || 3600000;
     const since = new Date(Date.now() - sinceMs);
 
-    const stats = await Reading.aggregate([
-      { $match: { timestamp: { $gte: since } } },
-      { $group: {
-        _id: { sensorId: '$sensorId', type: '$type' },
-        avg:       { $avg: '$value' },
-        max:       { $max: '$value' },
-        min:       { $min: '$value' },
-        count:     { $sum: 1 },
-        anomalies: { $sum: { $cond: ['$isAnomaly', 1, 0] } },
-      }},
-      { $sort: { '_id.sensorId': 1 } },
-    ]);
+    const stats = await readingService.findStats(sinceMs);
     res.json(successResponse(stats, { since }));
   } catch (err) { next(err); }
 });

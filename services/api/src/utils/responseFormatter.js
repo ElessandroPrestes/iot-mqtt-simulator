@@ -5,7 +5,7 @@
  * @param {Object} [meta=null] - Dados adicionais (paginação, total, etc)
  * @returns {Object} Payload formatado
  */
-function successResponse(data, meta = null) {
+function successResponse(data = null, meta = null) {
   return {
     success: true,
     data,
