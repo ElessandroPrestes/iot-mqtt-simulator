@@ -3,6 +3,9 @@
 ## Fase
 **5 — Documentação e Release**
 
+## SPEC Associada
+[SPEC-005-api-documentation.md](../specs/SPEC-005-api-documentation.md)
+
 ## Prioridade
 **P3 — Normal**
 

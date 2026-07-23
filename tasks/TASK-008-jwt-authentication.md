@@ -3,6 +3,9 @@
 ## Fase
 **3 — Segurança e Produção**
 
+## SPEC Associada
+[SPEC-003-api-security-jwt.md](../specs/SPEC-003-api-security-jwt.md)
+
 ## Prioridade
 **P2 — Média**
 

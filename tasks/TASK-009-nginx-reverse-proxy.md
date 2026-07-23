@@ -3,6 +3,9 @@
 ## Fase
 **3 — Segurança e Produção**
 
+## SPEC Associada
+[SPEC-004-production-observability.md](../specs/SPEC-004-production-observability.md)
+
 ## Prioridade
 **P2 — Média**
 

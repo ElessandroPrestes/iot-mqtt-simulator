@@ -4,7 +4,7 @@
 **2 — Qualidade e Cobertura**
 
 ## SPEC Associada
-Limitação conhecida registrada no [PROJECT.md](../PROJECT.md) — Seção 15
+[SPEC-002-alert-deduplication.md](../specs/SPEC-002-alert-deduplication.md)
 
 ## Prioridade
 **P1 — Alta (negócio crítico)**
