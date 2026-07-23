@@ -3,22 +3,25 @@ const http = require('http');
 const mongoose = require('mongoose');
 const { createApp } = require('./app');
 const { createSocketServer } = require('./websocket/socketServer');
+const { loadSecurityConfig } = require('./config/security');
 const mqttService = require('./services/mqttService');
 const logger = require('./utils/logger');
 
 async function bootstrap() {
+  const securityConfig = loadSecurityConfig();
+
   // MongoDB
   await mongoose.connect(process.env.MONGODB_URI, {
     dbName: process.env.MONGODB_DB_NAME,
   });
-  logger.info('MongoDB connected', { uri: process.env.MONGODB_URI });
+  logger.info('MongoDB connected');
 
   // Express + HTTP
-  const app    = createApp();
+  const app    = createApp({ securityConfig });
   const server = http.createServer(app);
 
   // Socket.io
-  const io = createSocketServer(server, process.env.CORS_ORIGINS?.split(','));
+  const io = createSocketServer(server, securityConfig);
 
   // MQTT Processor
   mqttService.init(io);
