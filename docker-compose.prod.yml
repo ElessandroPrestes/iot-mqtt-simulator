@@ -22,6 +22,7 @@ services:
       - iot_network
 
   api:
+    image: iot-mqtt-simulator-api:prod
     build:
       context: ./services/api
       dockerfile: Dockerfile
@@ -37,6 +38,7 @@ services:
       - iot_network
 
   simulator:
+    image: iot-mqtt-simulator-simulator:prod
     build:
       context: ./services/simulator
       dockerfile: Dockerfile
@@ -48,6 +50,7 @@ services:
       - iot_network
 
   dashboard:
+    image: iot-mqtt-simulator-dashboard:prod
     build:
       context: ./services/dashboard
       dockerfile: Dockerfile
