@@ -13,6 +13,46 @@ const querySchema = Joi.object({
   page:      Joi.number().integer().min(1).default(1),
 });
 
+/**
+ * @swagger
+ * /api/v1/readings:
+ *   get:
+ *     summary: Retorna leituras com filtros e paginação.
+ *     tags: [Readings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: sensorId
+ *         schema:
+ *           type: string
+ *         description: Filtrar por ID do sensor
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [temperature, pressure, humidity, vibration]
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [normal, warning, critical]
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Leituras retornadas com sucesso
+ *       400:
+ *         description: Parâmetros inválidos
+ *       401:
+ *         description: Não autorizado
+ */
 // GET /api/v1/readings
 router.get('/', async (req, res, next) => {
   try {
@@ -36,6 +76,20 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+/**
+ * @swagger
+ * /api/v1/readings/latest:
+ *   get:
+ *     summary: Retorna a última leitura de cada sensor.
+ *     tags: [Readings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Últimas leituras retornadas
+ *       401:
+ *         description: Não autorizado
+ */
 // GET /api/v1/readings/latest
 router.get('/latest', async (req, res, next) => {
   try {
@@ -44,6 +98,26 @@ router.get('/latest', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+/**
+ * @swagger
+ * /api/v1/readings/stats:
+ *   get:
+ *     summary: Retorna estatísticas de leituras.
+ *     tags: [Readings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: since
+ *         schema:
+ *           type: integer
+ *         description: Janela de tempo em milissegundos (default 1 hora)
+ *     responses:
+ *       200:
+ *         description: Estatísticas retornadas
+ *       401:
+ *         description: Não autorizado
+ */
 // GET /api/v1/readings/stats
 router.get('/stats', async (req, res, next) => {
   try {

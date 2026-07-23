@@ -120,13 +120,42 @@ O projeto foi construído para ser executado nativamente em containers Docker, e
    *(Em Dev `make up`: Dashboard em `localhost:5173` e API em `localhost:3000`)*
 
 6. **Rodando os Testes e Cobertura:**
-   A API possui testes automatizados (unitários e integração). Para executá-los:
    ```bash
-   cd services/api
    npm test               # Roda a suíte de testes
    npm run test:coverage  # Gera o relatório de cobertura em /coverage
    ```
    *(A cobertura atual deve se manter em no mínimo 90% conforme diretrizes do SDD)*
+
+## 📖 Payload MQTT (Exemplos)
+
+O simulador e a API esperam que os dados via MQTT sigam o seguinte padrão JSON para o tópico `iot/sensors/<sensorId>`:
+
+**Leitura Normal (Temperatura)**
+```json
+{
+  "sensorId": "sensor-temp-01",
+  "type": "temperature",
+  "value": 24.5,
+  "unit": "C",
+  "timestamp": "2023-10-25T10:00:00Z"
+}
+```
+
+**Leitura Crítica (Vibração)**
+```json
+{
+  "sensorId": "sensor-vib-01",
+  "type": "vibration",
+  "value": 85.0,
+  "unit": "mm/s",
+  "timestamp": "2023-10-25T10:05:00Z"
+}
+```
+
+(A engine de regras automaticamente gera um alerta se `value` exceder os limites configurados para aquele tipo de sensor).
+
+---
+*Este projeto foi desenvolvido com foco em Boas Práticas de Engenharia de Software, utilizando princípios de SDD (Software Design Document).*
 
 7. **Parando o Ambiente:**
    ```bash

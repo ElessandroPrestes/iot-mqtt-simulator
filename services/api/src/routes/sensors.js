@@ -2,6 +2,20 @@ const router = require('express').Router();
 const Reading = require('../models/Reading');
 const { successResponse } = require('../utils/responseFormatter');
 
+/**
+ * @swagger
+ * /api/v1/sensors:
+ *   get:
+ *     summary: Lista sensores únicos e sua última leitura.
+ *     tags: [Sensors]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de sensores retornada com sucesso
+ *       401:
+ *         description: Não autorizado
+ */
 // GET /api/v1/sensors — lista sensores únicos com última leitura
 router.get('/', async (req, res, next) => {
   try {
@@ -32,6 +46,35 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+/**
+ * @swagger
+ * /api/v1/sensors/{id}:
+ *   get:
+ *     summary: Retorna o histórico de leituras de um sensor específico.
+ *     tags: [Sensors]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID do sensor
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 100
+ *         description: Limite de resultados
+ *     responses:
+ *       200:
+ *         description: Histórico retornado com sucesso
+ *       404:
+ *         description: Sensor não encontrado
+ *       401:
+ *         description: Não autorizado
+ */
 // GET /api/v1/sensors/:id — histórico de um sensor
 router.get('/:id', async (req, res, next) => {
   try {

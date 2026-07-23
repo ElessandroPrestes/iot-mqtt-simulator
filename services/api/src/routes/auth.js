@@ -3,6 +3,29 @@ const jwt = require('jsonwebtoken');
 const { successResponse } = require('../utils/responseFormatter');
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/v1/auth/login:
+ *   post:
+ *     summary: Autentica o usuário e retorna um JWT token.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Sucesso no login
+ *       401:
+ *         description: Credenciais inválidas
+ */
 router.post('/login', (req, res, next) => {
   try {
     const { username, password } = req.body;

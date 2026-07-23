@@ -13,6 +13,44 @@ const querySchema = Joi.object({
   page:     Joi.number().integer().min(1).default(1),
 });
 
+/**
+ * @swagger
+ * /api/v1/alerts:
+ *   get:
+ *     summary: Retorna alertas com filtros e paginação.
+ *     tags: [Alerts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: sensorId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: level
+ *         schema:
+ *           type: string
+ *           enum: [warning, critical]
+ *       - in: query
+ *         name: resolved
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Alertas retornados com sucesso
+ *       400:
+ *         description: Parâmetros inválidos
+ *       401:
+ *         description: Não autorizado
+ */
 // GET /api/v1/alerts
 router.get('/', async (req, res, next) => {
   try {
@@ -50,6 +88,28 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+/**
+ * @swagger
+ * /api/v1/alerts/{id}/resolve:
+ *   patch:
+ *     summary: Marca um alerta como resolvido.
+ *     tags: [Alerts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Alerta resolvido
+ *       404:
+ *         description: Alerta não encontrado
+ *       401:
+ *         description: Não autorizado
+ */
 // PATCH /api/v1/alerts/:id/resolve
 router.patch('/:id/resolve', async (req, res, next) => {
   try {
@@ -68,6 +128,20 @@ router.patch('/:id/resolve', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+/**
+ * @swagger
+ * /api/v1/alerts/summary:
+ *   get:
+ *     summary: Retorna resumo consolidado de alertas (resolvidos vs não resolvidos).
+ *     tags: [Alerts]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Resumo retornado
+ *       401:
+ *         description: Não autorizado
+ */
 // GET /api/v1/alerts/summary
 router.get('/summary', async (req, res, next) => {
   try {

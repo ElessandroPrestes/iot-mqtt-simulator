@@ -43,12 +43,16 @@ function createApp() {
   // ── Rotas ─────────────────────────────────────────────────────
   app.use('/health',              healthRouter);
   app.use('/metrics',             metricsRouter);
-  app.use('/api/v1/auth',         authRouter);
+  app.use('/v1/auth',             authRouter);
+  
+  const setupSwagger = require('./config/swagger');
+  setupSwagger(app);
+
   
   // Rotas Protegidas
-  app.use('/api/v1/readings',     authenticate, readingsRouter);
-  app.use('/api/v1/sensors',      authenticate, sensorsRouter);
-  app.use('/api/v1/alerts',       authenticate, alertsRouter);
+  app.use('/v1/readings',         authenticate, readingsRouter);
+  app.use('/v1/sensors',          authenticate, sensorsRouter);
+  app.use('/v1/alerts',           authenticate, alertsRouter);
 
   app.use(errorHandler);
   return app;

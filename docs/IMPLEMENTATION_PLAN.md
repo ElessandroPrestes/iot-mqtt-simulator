@@ -242,15 +242,15 @@
 
 #### TASK-011 — OpenAPI/Swagger (D2)
 
-- **Status:** 🔴 Aberto
+- **Status:** 🟢 Concluído
 - **Prioridade:** P3
 - **Arquivos:** `services/api/src/app.js`, JSDoc nos routes
 - **O que fazer:**
   - Adicionar `swagger-jsdoc` + `swagger-ui-express`
   - Documentar todos os endpoints com anotações JSDoc
-  - Expor em `GET /api/docs`
+  - Expor em `GET /docs` (através do Nginx na rota `/api/docs`)
   - Incluir exemplos de payload MQTT no README
-- **Critério de aceite:** Swagger UI acessível em `http://localhost:3000/api/docs`
+- **Critério de aceite:** Swagger UI acessível em `http://localhost:8080/api/docs`
 
 ---
 
