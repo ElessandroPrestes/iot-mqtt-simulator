@@ -2,9 +2,9 @@
 
 ## Status
 
-🟢 **Aprovada para planejamento e implementação**
+🟢 **Aprovada e emendada para fechamento integral do Level 2**
 
-**Aprovação humana registrada em:** 2026-07-23
+**Aprovação humana registrada em:** 2026-07-23 e 2026-07-24
 
 ## 1. Objetivo
 
@@ -65,7 +65,9 @@ mensurável de verificação.
 
 - Certificação formal OWASP ou auditoria independente.
 - Pentest externo contratado.
-- SSO corporativo, OAuth/OIDC de terceiros e MFA.
+- SSO corporativo e OAuth/OIDC de terceiros.
+- Enrollment e recovery self-service de MFA; o TOTP provisionado
+  administrativamente passa a fazer parte do escopo.
 - WAF, SIEM gerenciado, Kubernetes ou service mesh.
 - Implementação da integração planejada com AWS IoT Core.
 - Gestão completa de identidades multi-tenant ou autosserviço de cadastro.
@@ -221,6 +223,38 @@ mensurável de verificação.
 - Testes devem cobrir falhas de MongoDB, MQTT, JWT, configuração, parsing e
   encerramento, garantindo que nenhuma condição excepcional conceda acesso.
 
+### 6.11. Emenda ASVS Level 2 de 2026-07-24
+
+A triagem individual encontrou 34 requisitos aplicáveis em `Fail`. Para manter o
+nível-alvo aprovado, a implementação deve também:
+
+- exigir senha + TOTP em produção, impedir reutilização do mesmo código e
+  rejeitar hashes Argon2id abaixo dos parâmetros mínimos;
+- vincular access JWT a uma família de sessão ativa, incluir `typ=at+jwt` e
+  invalidar imediatamente tokens após logout, revogação ou desabilitação;
+- impor inatividade máxima de 30 minutos, vida absoluta de 8 horas e até três
+  famílias concorrentes por principal;
+- permitir ao usuário listar/revogar suas sessões e a um principal
+  `securityAdmin` revogar qualquer sessão;
+- usar TLS 1.2/1.3 com validação de hostname/CA em todas as conexões internas;
+- usar certificados cliente individuais e de curta duração para Nginx,
+  Prometheus, API, Simulator, Alloy e Grafana;
+- substituir senha MQTT por mTLS/identidade de certificado e senha MongoDB da
+  API por `MONGODB-X509` com usuário de mínimo privilégio;
+- exigir gestor de secrets como fonte de verdade em produção e limitar o
+  provisionamento local/CI a material efêmero;
+- centralizar logs via Grafana Alloy e Loki atrás de gateway mTLS, com volumes
+  separados, retenção, exclusão desabilitada e sem acesso de escrita pela
+  aplicação;
+- versionar inventário de logs, classificação de dados, matriz de autorização
+  por campo, política/inventário criptográfico e SLA de vulnerabilidades;
+- aplicar `Cache-Control: no-store` a respostas autenticadas e de sessão;
+- fixar e testar cipher suites aprovadas;
+- exigir certificado publicamente confiável para o edge no deploy real.
+
+Não é permitido encerrar a TASK classificando qualquer um desses fluxos
+existentes como `N/A`.
+
 ## 7. Critérios de aceite
 
 - [ ] Threat model aprovado e versionado.
@@ -236,11 +270,21 @@ mensurável de verificação.
 - [ ] Dashboard não realiza auto-login e não persiste tokens em Web Storage.
 - [ ] REST e Socket.io rejeitam acesso anônimo/sem papel com `401` ou `403`.
 - [ ] Login bloqueia brute force conforme o limite definido.
+- [ ] Login de produção exige TOTP e rejeita replay.
+- [ ] Logout e revogação invalidam access token imediatamente.
+- [ ] Inatividade, concorrência e administração de sessões passam nos testes.
 - [ ] Entradas HTTP e MQTT inválidas são rejeitadas e testadas.
 - [ ] Apenas Nginx publica tráfego da aplicação; TLS e headers passam nos testes.
+- [ ] Todas as conexões internas usam TLS/mTLS com validação de certificado.
+- [ ] MQTT e MongoDB autenticam a API/Simulator por certificado e mínimo
+      privilégio, sem credencial backend estática.
 - [ ] CI bloqueia vulnerabilidades corrigíveis `high`/`critical`, secrets
       detectados, falhas SAST e imagens inseguras.
 - [ ] Logs e alertas de segurança são verificáveis sem exposição de segredos.
+- [ ] Logs são centralizados em sistema logicamente separado e sem permissão de
+      alteração pela aplicação.
+- [ ] Inventários, políticas, matriz por campo e classificação de dados estão
+      versionados e coerentes com a matriz ASVS.
 - [ ] Suítes existentes continuam verdes e os thresholds de cobertura do projeto
       são mantidos.
 - [ ] DAST baseline contra a stack de produção não apresenta alerta `high`.
@@ -254,8 +298,8 @@ mensurável de verificação.
 - [ADR-003 — Push em Tempo Real via Socket.io](../adr/ADR-003-realtime.md)
 - [ADR-004 — Monitoramento e Logs via Winston e Prometheus](../adr/ADR-004-observability.md)
 - [ADR-005 — Pipeline de Integração Contínua](../adr/ADR-005-cicd.md)
-- **ADR novo obrigatório:** estratégia de autenticação, sessão, autorização,
-  secrets e TLS, a ser aprovado antes da implementação.
+- [ADR-006 — Autenticação, sessão, autorização, secrets e transporte seguro](../adr/ADR-006-security-session-transport.md),
+  incluindo a emenda ASVS Level 2 de 2026-07-24.
 
 ## 9. Task relacionada
 
@@ -265,5 +309,9 @@ mensurável de verificação.
 
 - [x] Escopo e nível ASVS aprovados.
 - [x] Estratégia de sessão proposta aprovada.
-- [x] Exceções e riscos residuais aprovados.
+- [x] Exceções e riscos residuais iniciais aprovados.
 - [x] Implementação autorizada.
+- [x] Manutenção do alvo ASVS Level 2 aprovada em 2026-07-24.
+- [x] MFA, sessões revogáveis, TLS/mTLS interno, identidades de workload,
+      gestão de secrets e logs centralizados autorizados.
+- [x] Implementação da emenda autorizada.

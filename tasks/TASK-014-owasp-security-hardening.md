@@ -2,13 +2,15 @@
 
 ## Status
 
-🟠 **Em andamento — review com changes requested**
+🟠 **Em andamento — refactor ASVS Level 2 integral autorizado**
 
 A SPEC-006 foi aprovada por humano em 2026-07-23. Esta TASK deve ser concluída
 antes de qualquer release v1.0.0. Os controles de aplicação e infraestrutura
 foram implementados e testados. O review de 2026-07-23 permanece bloqueado pela
 triagem ASVS, por requisitos arquiteturais incompatíveis com o ADR-006 atual e
 por evidências operacionais pendentes. A TASK-013 continua bloqueada.
+Em 2026-07-24, a decisão humana foi manter o alvo Level 2 e eliminar os 34
+`Fail`; a emenda do ADR-006/SPEC-006 foi autorizada sem exceções permanentes.
 
 ## Fase
 
@@ -33,6 +35,7 @@ alvo OWASP ASVS 5.0.0 Level 2 e cobrir adequadamente OWASP Top 10:2025.
 
 - [x] SPEC-006 aprovada explicitamente por humano.
 - [x] ADR de autenticação, sessão, autorização, secrets e TLS aprovado.
+- [x] Emenda de arquitetura para fechamento integral do Level 2 aprovada.
 - [x] Baseline ASVS e threat model revisados.
 - [x] Nenhuma atividade da TASK-013 iniciada.
 
@@ -50,6 +53,8 @@ alvo OWASP ASVS 5.0.0 Level 2 e cobrir adequadamente OWASP Top 10:2025.
 - [x] Review formal executado.
 - [x] Todos os 253 requisitos ASVS Level 1/2 triados individualmente:
       118 `Pass`, 101 `N/A` e 34 `Fail`.
+- [x] Decisão humana: manter Level 2 e corrigir os 34 `Fail`.
+- [x] ADR-006 e SPEC-006 emendados antes do novo ciclo de código.
 - [ ] Apontamentos do review resolvidos.
 - [ ] Aprovação final do Review Agent e do risco residual.
 
@@ -290,3 +295,56 @@ Não misturar release, changelog ou tag nesses commits.
 A TASK só pode ser marcada como concluída quando todos os gates finais estiverem
 atendidos, as evidências estiverem versionadas e houver aprovação humana do
 risco residual. Isso não equivale a certificação OWASP independente.
+
+## 6. Plano aprovado para os 34 requisitos em `Fail`
+
+### Bloco A — Documentação verificável
+
+- [ ] Política de senha e palavras contextuais (`V6.1.2`).
+- [ ] Matriz de autorização por rota/operação/campo (`V8.1.2`).
+- [ ] Política e inventário criptográfico (`V11.1.1`, `V11.1.2`,
+      `V11.2.2`).
+- [ ] Classificação e requisitos de proteção de dados (`V14.1.1`,
+      `V14.1.2`, `V14.2.4`).
+- [ ] SLA de vulnerabilidades e plano dos advisories moderate (`V15.1.1`,
+      `V15.2.1`).
+- [ ] Inventário operacional de logs (`V16.1.1`, `V16.2.3`, `V16.2.4`).
+
+### Bloco B — Autenticação, token e sessão
+
+- [ ] TOTP obrigatório e anti-replay (`V6.3.3`).
+- [ ] Inatividade, concorrência e documentação de sessão (`V7.1.1`,
+      `V7.1.2`, `V7.3.1`).
+- [ ] Revogação imediata, administrativa e pelo usuário (`V7.4.1`,
+      `V7.4.5`, `V7.5.2`).
+- [ ] `typ=at+jwt` e finalidade explícita (`V9.2.2`).
+- [ ] Validação de parâmetros Argon2id (`V11.4.2`).
+
+### Bloco C — Transporte e identidade backend
+
+- [ ] Cipher suites explícitas e teste (`V12.1.2`).
+- [ ] Gate de certificado público do edge (`V12.2.2`).
+- [ ] TLS/CA em todas as conexões internas (`V12.3.1`, `V12.3.2`,
+      `V12.3.3`, `V12.3.4`).
+- [ ] mTLS MQTT e MongoDB X.509 (`V13.2.1`).
+- [ ] Usuário MongoDB de mínimo privilégio (`V13.2.2`).
+- [ ] Lifecycle de secrets com fonte de verdade externa (`V13.3.1`).
+
+### Bloco D — Dados e observabilidade
+
+- [ ] `Cache-Control: no-store` em respostas sensíveis (`V14.3.2`).
+- [ ] Alloy → gateway mTLS → Loki, com Grafana autenticado
+      (`V16.4.3`).
+- [ ] Volumes separados, retenção, exclusão desabilitada e aplicação sem
+      permissão de alteração (`V16.4.2`).
+
+### Ordem do novo ciclo
+
+1. Criar testes falhos dos Blocos B, C e D.
+2. Implementar Bloco B e executar suítes de aplicação.
+3. Implementar PKI efêmera/validações e Bloco C.
+4. Implementar centralização/proteção de logs e Bloco D.
+5. Concluir documentos do Bloco A com evidências reais.
+6. Executar stack, TLS/mTLS, Trivy, DAST e GitHub Actions.
+7. Atualizar as 34 linhas da matriz somente com evidência reproduzível.
+8. Executar novo Review Agent.

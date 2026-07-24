@@ -1,8 +1,9 @@
 # ADR-006: Autenticação, sessão, autorização, secrets e transporte seguro
 
-**Status:** Aceito
+**Status:** Aceito — emendado para ASVS 5.0.0 Level 2 integral
 **Data:** 2026-07-23
-**Aprovação humana:** 2026-07-23
+**Emenda:** 2026-07-24
+**Aprovação humana:** 2026-07-23 e 2026-07-24
 **SPEC:** [SPEC-006](../specs/SPEC-006-owasp-security-hardening.md)
 **TASK:** [TASK-014](../tasks/TASK-014-owasp-security-hardening.md)
 
@@ -229,3 +230,121 @@ Nenhum código da TASK-014 deve ser alterado até este ADR ser aceito.
 - [x] Isolamento de portas e TLS aprovado.
 - [x] Estratégia de secrets aprovada.
 - [x] ADR aceito por humano.
+
+## Emenda de 2026-07-24 — fechamento dos requisitos ASVS Level 2
+
+### Motivação e decisão humana
+
+A triagem individual dos 253 requisitos Level 1/2 encontrou 34 itens aplicáveis
+em `Fail`. Em 2026-07-24, o responsável humano delegou a escolha da melhor
+decisão e aprovou sua aplicação. A decisão é **preservar o nível-alvo ASVS
+5.0.0 Level 2 e eliminar as lacunas**, sem reclassificar fluxos existentes como
+`N/A` e sem reduzir o nível-alvo.
+
+Esta emenda substitui as decisões anteriores que aceitavam:
+
+- HTTP, MQTT e MongoDB plaintext em redes Docker;
+- credenciais backend persistentes;
+- autenticação somente por senha;
+- access JWT válido depois do logout;
+- logs apenas locais e mutáveis.
+
+### 9. Autenticação multifator
+
+- Todo principal habilitado em produção terá senha Argon2id e segredo TOTP
+  provisionados por secret externo.
+- O login exigirá senha e TOTP de seis dígitos, com período de 30 segundos,
+  tolerância máxima de uma janela e proteção atômica contra reutilização.
+- Não haverá enrollment ou recovery self-service nesta entrega. Provisionamento,
+  rotação e recuperação serão operações administrativas autenticadas e
+  auditadas.
+- Hashes Argon2id com parâmetros abaixo do mínimo aprovado serão rejeitados no
+  bootstrap.
+- Palavras contextuais proibidas e política de senha serão documentadas no
+  artefato de principals e no runbook de provisionamento.
+
+### 10. Sessões revogáveis e administráveis
+
+- Access tokens incluirão `sid`, `jti` e header `typ=at+jwt`.
+- A validação do access token consultará uma família de sessão ativa no backend.
+  Logout, desabilitação do principal ou revogação administrativa invalidarão o
+  acesso imediatamente.
+- A família terá vida absoluta máxima de 8 horas e timeout de inatividade de
+  30 minutos, ambos configuráveis apenas para valores iguais ou mais restritos.
+- Cada principal terá no máximo três famílias concorrentes; ao atingir o
+  limite, nova autenticação será negada até o encerramento de uma sessão.
+- O usuário poderá listar e revogar suas sessões. Um principal explicitamente
+  marcado `securityAdmin` poderá revogar sessões de qualquer principal.
+- Refresh rotation continuará atômica e de uso único.
+
+### 11. TLS interno e identidade de workload
+
+- Todas as conexões do perfil de produção usarão TLS 1.2/1.3 com validação de
+  certificado e hostname:
+  - Nginx → API;
+  - Nginx → Dashboard;
+  - Prometheus → API;
+  - API → MongoDB;
+  - API/Simulator → Mosquitto;
+  - Alloy/Grafana → gateway de logs.
+- API, Dashboard, MongoDB, Mosquitto e gateway de logs apresentarão certificados
+  de servidor emitidos pela CA interna aprovada.
+- Nginx, Prometheus, API, Simulator, Alloy e Grafana usarão certificados cliente
+  individuais. Certificados de workload terão validade máxima de 24 horas.
+- Mosquitto exigirá certificado cliente, usará a identidade do certificado como
+  username e aplicará ACL por workload; senha MQTT deixa de ser aceita.
+- MongoDB exigirá TLS e `MONGODB-X509`. A API usará usuário `$external` com
+  somente `readWrite` no banco `iot_dashboard`; a conta root será restrita ao
+  bootstrap e administração.
+- A stack falhará fechado quando CA, certificado, chave ou configuração de
+  verificação estiver ausente.
+- O certificado do edge público continuará externo à imagem e deverá encadear a
+  uma CA publicamente confiável no deploy real. O certificado efêmero do CI
+  representa somente um ambiente não público.
+
+### 12. Gestão e rotação de secrets
+
+- Produção consumirá secrets de um gestor aprovado (Vault, serviço gerenciado
+  equivalente ou mecanismo corporativo documentado). Docker Compose será apenas
+  o mecanismo de entrega por arquivo, não a fonte de verdade.
+- CI criará CA, certificados e credenciais somente em diretório efêmero,
+  removerá o material no teardown e verificará permissões e validade.
+- O runbook definirá criação, owner, rotação, expiração, revogação, destruição e
+  resposta a comprometimento.
+- JWT terá algoritmo configurável por allowlist aprovada e rotação documentada;
+  material criptográfico e certificados terão inventário versionado sem valores
+  secretos.
+
+### 13. Logs protegidos e logicamente separados
+
+- Logs de segurança e operação serão coletados pelo Grafana Alloy, atualmente
+  suportado, e enviados por mTLS a um gateway autenticado diante do Loki.
+- Cada serviço escreverá em volume de log próprio; o Alloy terá acesso somente
+  leitura. Serviços da aplicação não terão acesso ao armazenamento do Loki.
+- Loki ficará em rede de observabilidade isolada, sem porta no host, com API de
+  exclusão desabilitada, retenção de 30 dias e volume acessível somente ao
+  processo Loki.
+- Grafana consultará Loki por identidade de workload e acesso administrativo.
+- O inventário de logs documentará evento, formato, origem, destino, retenção,
+  controle de acesso e uso. Alertas de ausência de ingestão complementarão os
+  alertas de eventos de segurança.
+
+### 14. Controles complementares dos 34 gaps
+
+- Respostas autenticadas e de sessão usarão `Cache-Control: no-store`.
+- Será criada matriz de autorização por rota, operação e campo.
+- Dados sensíveis serão classificados e terão requisitos de proteção por nível.
+- Cipher suites externas e internas serão allowlisted e testadas.
+- Política e inventário criptográfico definirão lifecycle e crypto agility.
+- Política de dependências definirá SLA por severidade; os advisories moderate
+  atuais terão owner `Maintainer do projeto`, prazo e teste de upgrade major.
+
+### Gate desta emenda
+
+- [x] Manutenção do alvo ASVS 5.0.0 Level 2 aprovada por humano.
+- [x] Ampliação de escopo para MFA, sessões administráveis, TLS/mTLS interno,
+      identidade de workloads e logs centralizados aprovada.
+- [x] Exceções permanentes rejeitadas.
+- [ ] Testes de segurança adicionados antes da implementação.
+- [ ] Todos os 34 itens aplicáveis convertidos para `Pass`.
+- [ ] Evidência de certificado público anexada para o deploy real.
