@@ -48,6 +48,8 @@ alvo OWASP ASVS 5.0.0 Level 2 e cobrir adequadamente OWASP Top 10:2025.
 - [x] Stack de produção com TLS externo, secrets, ACL e portas internas testada.
 - [x] Testes, audits, Trivy e ZAP executados localmente.
 - [x] Review formal executado.
+- [x] Todos os 253 requisitos ASVS Level 1/2 triados individualmente:
+      118 `Pass`, 101 `N/A` e 34 `Fail`.
 - [ ] Apontamentos do review resolvidos.
 - [ ] Aprovação final do Review Agent e do risco residual.
 
@@ -219,9 +221,9 @@ Não misturar release, changelog ou tag nesses commits.
 ### A03/A08 — Supply Chain e Integrity
 
 - [x] Lockfiles são usados com `npm ci`.
-- [ ] SAST e secret scanning passam.
+- [x] SAST e secret scanning passam no GitHub Actions.
 - [x] Dependency e image scanning não possuem falha bloqueadora.
-- [ ] SBOM identifica commit e artefatos.
+- [x] SBOM identifica commit e artefatos.
 - [x] Actions usam SHA e permissões mínimas.
 
 ### A04 — Cryptographic Failures
@@ -276,6 +278,7 @@ Não misturar release, changelog ou tag nesses commits.
 - [x] Testes da API, Dashboard e Simulator passam.
 - [x] Cobertura mínima do projeto é mantida.
 - [x] DAST baseline não apresenta alerta `high`.
+- [x] Matriz ASVS contém uma linha auditável para cada um dos 253 requisitos.
 - [ ] Matriz ASVS 5.0.0 Level 2 não possui item aplicável em `Fail`.
 - [ ] Review Agent: `Approved`.
 - [ ] `PROJECT.md`, README, OpenAPI e runbooks refletem o estado testado.

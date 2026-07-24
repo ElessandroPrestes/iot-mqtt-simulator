@@ -1,7 +1,7 @@
 # Baseline OWASP ASVS 5.0.0 Level 2
 
-**Status:** Review bloqueado — triagem por requisito e decisão arquitetural pendentes
-**Data:** 2026-07-23
+**Status:** Triagem individual concluída — 34 requisitos aplicáveis em `Fail`
+**Data:** 2026-07-24
 **Aprovação humana da baseline:** 2026-07-23
 **Nível-alvo:** Level 2  
 **Escopo:** API, Dashboard, Socket.io e controles de infraestrutura dependentes
@@ -24,125 +24,87 @@ certificação e não considera um requisito atendido sem evidência reproduzív
 | Estado | Significado |
 |---|---|
 | Pass | Controle implementado, testado e com evidência |
-| Partial | Há controle, mas ele não cobre o requisito integralmente |
 | Fail | Controle ausente ou comprovadamente inseguro |
 | N/A | Requisito não se aplica, com justificativa |
-| Pending | Ainda não triado por ID |
 
-## 3. Inventário Level 1/2 por capítulo
+## 3. Resultado consolidado
 
-| Capítulo | Tema | Qtde. L1/L2 | Aplicabilidade inicial | Baseline |
-|---|---|---:|---|---|
-| V1 | Encoding and Sanitization | 27 | Parcial: HTTP, MQTT, Mongo e logs | Fail |
-| V2 | Validation and Business Logic | 11 | Sim | Fail |
-| V3 | Web Frontend Security | 19 | Sim | Partial |
-| V4 | API and Web Service | 10 | Sim: REST e WebSocket; GraphQL N/A | Fail |
-| V5 | File Handling | 9 | Não há upload/download de arquivos | N/A preliminar |
-| V6 | Authentication | 35 | Sim; funções de cadastro/change password parcialmente N/A | Fail |
-| V7 | Session Management | 18 | Sim | Fail |
-| V8 | Authorization | 7 | Sim | Fail |
-| V9 | Self-contained Tokens | 7 | Sim: JWT | Fail |
-| V10 | OAuth and OIDC | 29 | OAuth/OIDC não utilizados | N/A preliminar |
-| V11 | Cryptography | 14 | Sim: JWT, refresh e secrets | Fail |
-| V12 | Secure Communication | 9 | Sim: HTTPS/WSS/MQTT | Fail |
-| V13 | Configuration | 13 | Sim | Fail |
-| V14 | Data Protection | 9 | Sim | Fail |
-| V15 | Secure Coding and Architecture | 13 | Sim | Partial |
-| V16 | Security Logging and Error Handling | 16 | Sim | Fail |
-| V17 | WebRTC | 7 | WebRTC não utilizado | N/A preliminar |
-| **Total** |  | **253** |  |  |
+A matriz canônica e auditável está em
+[`asvs-5.0.0-level-2.csv`](asvs-5.0.0-level-2.csv). Ela contém exatamente uma
+linha para cada requisito Level 1/2 e as colunas obrigatórias `Requirement`,
+`Applicable`, `State`, `Justification`, `Control`, `Test`, `Evidence` e `Owner`.
 
-## 4. Evidências atuais
+| Capítulo | Pass | Fail | N/A | Total |
+|---|---:|---:|---:|---:|
+| V1 | 12 | 0 | 15 | 27 |
+| V2 | 10 | 0 | 1 | 11 |
+| V3 | 16 | 0 | 3 | 19 |
+| V4 | 7 | 0 | 3 | 10 |
+| V5 | 0 | 0 | 9 | 9 |
+| V6 | 10 | 2 | 23 | 35 |
+| V7 | 8 | 6 | 4 | 18 |
+| V8 | 5 | 1 | 1 | 7 |
+| V9 | 6 | 1 | 0 | 7 |
+| V10 | 0 | 0 | 29 | 29 |
+| V11 | 6 | 4 | 4 | 14 |
+| V12 | 2 | 6 | 1 | 9 |
+| V13 | 10 | 3 | 0 | 13 |
+| V14 | 5 | 4 | 0 | 9 |
+| V15 | 10 | 2 | 1 | 13 |
+| V16 | 11 | 5 | 0 | 16 |
+| V17 | 0 | 0 | 7 | 7 |
+| **Total** | **118** | **34** | **101** | **253** |
 
-### Controles parciais existentes
+Todos os 101 itens `N/A` foram avaliados por ID. Eles correspondem a mecanismos
+ausentes do produto, como upload de arquivos, OAuth/OIDC e WebRTC; nenhuma
+conexão ou controle existente foi classificado como não aplicável.
 
-- Helmet na API.
-- Rate limit HTTP global.
-- Joi em parte das querystrings.
-- JWT Bearer em rotas REST privadas.
-- Error handler centralizado.
-- CORS configurável.
-- Mosquitto com `allow_anonymous false`.
-- Logs Winston e métricas Prometheus.
-- Lockfiles e `npm ci` no CI.
+## 4. Bloqueios revelados pela triagem
 
-### Falhas comprovadas
+Além dos cinco requisitos inicialmente citados no review, a análise individual
+encontrou lacunas aplicáveis nos seguintes grupos:
 
-- Credenciais e segredo JWT possuem fallback utilizável.
-- Dashboard executa auto-login e persiste JWT em `localStorage`.
-- JWT não fixa algoritmo, issuer e audience.
-- Não há refresh rotation, revogação ou logout efetivo.
-- Não há RBAC para resolução de alertas.
-- Socket.io não autentica handshake/eventos.
-- CORS falha para wildcard quando configuração está ausente.
-- MQTT usa credencial compartilhada, sem ACL e sem validação integral do payload.
-- Produção publica API, MQTT, Grafana e Prometheus diretamente.
-- TLS não está configurado no Nginx/MQTT.
-- MongoDB não exige autenticação no perfil de produção.
-- Swagger e métricas não possuem política de exposição segura.
-- Pipeline não possui SAST, secret scanning, image scan, SBOM ou DAST.
-- Logging de segurança e alertas dedicados estão ausentes.
+- autenticação: palavras contextuais de senha e segundo fator;
+- sessão: inatividade, concorrência, invalidação imediata do access token,
+  revogação administrativa e autosserviço de sessões;
+- autorização/token: matriz por campo e tipo/uso explícito do JWT;
+- criptografia: lifecycle/inventário, crypto agility e parâmetros mínimos
+  Argon2id;
+- transporte: cipher suites, certificado público e TLS/CA internos;
+- backend/secrets: identidades de curta duração, MongoDB sem conta root para a
+  API e gestão operacional de secrets;
+- dados: classificação, requisitos por nível e `Cache-Control: no-store`;
+- supply chain: SLA de vulnerabilidades;
+- logs: inventário, processador central, imutabilidade e separação lógica.
 
-## 5. Baseline de dependências
+Esses 34 itens permanecem `Fail`. O owner aparece como
+`Pendente decisão humana` porque nenhum risco foi aceito e o Refactor Agent não
+pode atribuir exceções nem reduzir o nível-alvo.
 
-Executado em 2026-07-23 com `npm audit --omit=dev --audit-level=high`:
+## 5. Evidências operacionais
 
-| Serviço | High/Critical | Outros achados |
-|---|---:|---|
-| API | 0 | 1 moderate em `uuid`; correção sugerida é breaking |
-| Dashboard | 0 | 2 moderate na cadeia `echarts`/`vue-echarts`; correção é breaking |
-| Simulator | 0 | 0 |
+- API: 149 testes e cobertura acima do gate.
+- Dashboard: 58 testes e build; o teste de WebSocket foi tornado independente
+  da variável `VITE_WS_URL` no commit `1ddf3ee`.
+- Simulator: 24 testes.
+- Stack local: TLS externo, autenticação, ACL e isolamento de portas validados.
+- Trivy/ZAP local: nenhuma vulnerabilidade high/critical nas imagens e nenhum
+  alerta high/medium/low no DAST.
+- GitHub Actions: execução
+  [`30087971980`](https://github.com/ElessandroPrestes/iot-mqtt-simulator/actions/runs/30087971980)
+  para CodeQL, Gitleaks, audits, testes, imagens, SBOM e DAST.
 
-Os achados moderate exigem triagem e testes de upgrade, mas não violam o gate
-proposto de `high`/`critical`.
+Achados moderate em `uuid` e `echarts`/`vue-echarts` não violam o gate aprovado
+de `high`/`critical`, mas continuam sem SLA até a resolução de
+`v5.0.0-V15.1.1`.
 
-## 6. Triagem obrigatória antes da conclusão
-
-A fase de implementação deve expandir esta baseline para uma linha por requisito
-Level 1/2 contendo:
-
-| Campo | Obrigatório |
-|---|---|
-| Requirement | ID no formato `v5.0.0-Vx.y.z` |
-| Aplicável | Sim/Não |
-| Estado | Pass/Fail/N/A |
-| Justificativa | Motivo objetivo |
-| Controle | Código/configuração responsável |
-| Teste | Teste automatizado ou procedimento |
-| Evidência | Commit, relatório ou saída reproduzível |
-| Owner | Responsável pelo risco residual |
-
-Requisitos N/A devem ser avaliados individualmente. A classificação preliminar
-por capítulo não autoriza marcar automaticamente todos os IDs daquele capítulo.
-
-## 7. Resultado do review de 2026-07-23
-
-Os controles implementados passaram nas suítes da aplicação, no smoke test da
-stack de produção, no Trivy e no ZAP. Isso não encerra o nível-alvo ASVS. Foram
-identificados requisitos aplicáveis que conflitam com o ADR-006 ou ainda não
-possuem evidência operacional:
-
-| Requirement | Estado atual | Motivo |
-|---|---|---|
-| `v5.0.0-V12.3.1` | Fail | MQTT e MongoDB trafegam plaintext na rede Docker |
-| `v5.0.0-V12.3.3` | Fail | Nginx, API e Dashboard usam HTTP interno |
-| `v5.0.0-V13.2.1` | Fail | MongoDB e MQTT usam credenciais persistentes |
-| `v5.0.0-V16.4.2` | Fail | Não há evidência de armazenamento imutável de logs |
-| `v5.0.0-V16.4.3` | Fail | Logs não são enviados a sistema logicamente separado |
-
-Esses itens não podem ser convertidos para `N/A` porque os fluxos existem e
-estão no escopo. A correção exige nova decisão humana sobre arquitetura e
-operação. O review completo está em
-`reviews/REVIEW-TASK-014-owasp-security-hardening.md`.
-
-## 8. Gates
+## 6. Gates
 
 - [x] Fonte estável e hash registrados.
 - [x] Inventário Level 1/2 contado por capítulo.
-- [x] Aplicabilidade inicial definida.
-- [x] Falhas atuais documentadas.
-- [ ] 253 requisitos triados individualmente.
-- [ ] Todos os requisitos aplicáveis possuem evidência.
+- [x] 253 requisitos triados individualmente.
+- [x] Todo `Pass` possui controle, teste e evidência.
+- [x] Todo `N/A` possui justificativa individual.
 - [ ] Nenhum requisito aplicável permanece `Fail`.
 - [ ] Exceções possuem aprovação, owner e prazo.
 - [x] Baseline revisada por humano.
