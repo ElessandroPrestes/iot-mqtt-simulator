@@ -81,5 +81,13 @@ describe('security configuration', () => {
         totpSecret: undefined,
       }]),
     }, 'test', { requireMfa: true })).toThrow('TOTP');
+
+    expect(() => parsePrincipals({
+      AUTH_PRINCIPALS_JSON: JSON.stringify([{
+        ...principal,
+        passwordHash: strongHash,
+        role: 'viewer',
+      }]),
+    }, 'test', { requireMfa: true })).toThrow('securityAdmin');
   });
 });

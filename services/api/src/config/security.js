@@ -106,6 +106,9 @@ function parsePrincipals(env, environment, options = {}) {
     if (requireMfa && !principal.totpSecret) {
       throw new Error('AUTH_PRINCIPALS requires TOTP for every enabled principal');
     }
+    if (principal.securityAdmin && principal.role !== 'operator') {
+      throw new Error('AUTH_PRINCIPALS only allows securityAdmin for operator');
+    }
   }
 
   return value;
