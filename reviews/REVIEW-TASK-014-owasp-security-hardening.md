@@ -6,7 +6,9 @@
 - SPEC: `SPEC-006`
 - ADR: `ADR-006`
 - Branch: `develop`
-- Revisão executada em: 2026-07-23
+- Commit revisado: `c28464b`
+- Revisão inicial: 2026-07-23
+- Nova revisão executada em: 2026-07-24
 
 ## Status
 
@@ -14,104 +16,110 @@
 - [ ] Approved with remarks
 - [x] Rejected — Changes Requested
 
-A implementação fecha os riscos prioritários identificados no threat model e
-passa nos testes funcionais, negativos, de imagem e DAST executados localmente.
-Entretanto, os gates finais da própria TASK ainda não permitem aprovação:
-a matriz ASVS não foi concluída e há requisitos Level 2 aplicáveis que não são
-atendidos pela arquitetura aceita no ADR-006.
+O refactor corrigiu e evidenciou 32 dos 34 requisitos ASVS originalmente em
+`Fail`. TLS/mTLS interno, identidades X.509, sessões revogáveis, MFA e logs
+centralizados/protegidos estão alinhados à emenda aprovada do ADR-006 e da
+SPEC-006. O pipeline remoto passa integralmente.
+
+A aprovação ainda é impossível porque dois requisitos Level 2 aplicáveis
+dependem de evidência operacional externa que não existe no repositório:
+certificado público no edge real (`V12.2.2`) e gestor externo de secrets como
+fonte de verdade (`V13.3.1`). Ambos permanecem `Fail`, sem exceção aprovada.
 
 ## Check-list base
 
 - Código está de acordo com `standards/coding.md`? **Sim.**
-- Existem testes adequados e passando? **Sim, para os controles
-  implementados.**
+- Existem testes adequados e passando? **Sim.**
 - Nenhum escopo extra foi adicionado? **Sim.**
-- Documentação canônica reflete integralmente o estado testado? **Não; deve ser
-  atualizada somente depois de os apontamentos bloqueadores serem resolvidos.**
+- Documentação de segurança reflete integralmente o estado testado? **Sim; a
+  matriz preserva os dois bloqueios sem afirmar conformidade integral.**
+- README foi atualizado antes da aprovação? **Não, corretamente; permanece
+  adiado conforme o fluxo SDD.**
 
 ## Evidências verificadas
 
 | Gate | Resultado | Evidência |
 |---|---|---|
-| API | Pass | 26 suites, 149 testes; 95,84% linhas e 87,04% branches |
-| Dashboard | Pass | 11 arquivos, 58 testes e build Vite |
-| Simulator | Pass | 24 testes |
-| Dependency audit | Pass no gate | 0 high/critical nos três serviços |
-| Imagens | Pass | Trivy 0.70.0: 0 high/critical em API, Dashboard e Simulator |
-| DAST | Pass | ZAP: 0 high, 0 medium e 0 low; 3 informativos de cache/SPA |
-| Stack de produção | Pass | Todos os seis serviços essenciais healthy |
-| Superfície externa | Pass | HTTP 308; HTTPS health 200; docs/metrics 404; anônimo 401 |
-| TLS | Pass externo | TLS 1.2 aceito e TLS 1.1 rejeitado |
-| Release | Pass | Nenhuma tag, changelog ou ação da TASK-013 realizada |
+| API | Pass | 31 suites, 189 testes e cobertura acima do gate |
+| Dashboard | Pass | 59 testes e build Vite |
+| Simulator | Pass | 28 testes e cobertura acima do gate |
+| Matriz ASVS | Parcial | 253 linhas: 150 `Pass`, 2 `Fail`, 101 `N/A`; teste estrutural automatizado |
+| Dependency audit | Pass no gate | API sem advisory; Dashboard com advisory moderate rastreado até 2026-08-23 |
+| Imagens | Pass | 0 high/critical em API, Dashboard e Simulator |
+| DAST | Pass | Local: 0 high/medium/low; remoto: gate high e observabilidade mTLS aprovados |
+| Stack de produção | Pass | TLS/mTLS, autenticação, ACL, X.509, seis streams de log e isolamento validados |
+| GitHub Actions | Pass | Run `30112871440`: dez jobs obrigatórios em `success` |
+| Release | Pass | Nenhuma tag, changelog, README de aprovação ou ação da TASK-013 |
 
-O primeiro image scan detectou 4 vulnerabilidades altas e 1 crítica no npm
-embutido na imagem Node. O refactor removeu npm/npx do runtime e passou no scan
-subsequente. Os relatórios locais ficaram em `/tmp/iot-trivy-results` e
-`/tmp/iot-dast-local`; o CI está configurado para produzir artefatos duráveis.
+Evidência remota consolidada:
+[`run 30112871440`](https://github.com/ElessandroPrestes/iot-mqtt-simulator/actions/runs/30112871440).
+O run anterior `30111549157` também passou e demonstrou a correção determinística
+do probe mTLS do Loki.
 
-## Apontamentos requeridos
+## Apontamentos anteriores
 
-### R-014-01 — P0 — Matriz ASVS incompleta
+### R-014-01 — Resolvido — Matriz ASVS
 
-`docs/security/asvs-5.0.0-level-2.md` ainda registra 253 requisitos como triagem
-pendente. A SPEC proíbe afirmar atendimento ao nível-alvo sem uma linha
-`Pass/Fail/N/A`, justificativa e evidência por requisito.
+A matriz contém exatamente 253 requisitos e todas as linhas possuem estado,
+justificativa, controle, teste, evidência e owner. O teste
+`securityDocumentation.test.js` prova a cardinalidade `150 Pass / 2 Fail /
+101 N/A` e os IDs dos dois bloqueios restantes.
 
-**Ação:** concluir a triagem individual e manter todo item aplicável diferente
-de `Pass` como bloqueador explícito.
+### R-014-02 — Resolvido — Comunicação e identidade backend
 
-### R-014-02 — P0 — Comunicação interna e credenciais backend
+O perfil de produção usa TLS 1.2/1.3 com validação de CA/hostname em todas as
+conexões internas. MQTT e MongoDB usam certificados cliente individuais;
+`CN=api-processor` tem somente `readWrite` no banco da aplicação. Os controles
+foram verificados por testes estáticos, unitários e pela stack isolada.
 
-O ADR-006 aceita HTTP e MQTT plaintext dentro das redes Docker e credenciais
-persistentes para MongoDB/MQTT. Isso conflita, ao menos, com:
+### R-014-03 — Resolvido — Proteção e centralização de logs
 
-- `v5.0.0-V12.3.1`: TLS em conexões inbound/outbound da aplicação;
-- `v5.0.0-V12.3.3`: TLS entre serviços HTTP internos;
-- `v5.0.0-V13.2.1`: autenticação backend sem credenciais estáticas.
+API, Simulator, edge, Dashboard, Broker e Mongo gravam em volumes próprios.
+Alloy os monta somente para leitura e envia por mTLS ao gateway/Loki isolado.
+Retenção é `720h`, exclusão está desabilitada e o CI exige os seis streams,
+rejeição sem certificado e datasource Grafana saudável.
 
-Não é correto classificar esses requisitos como `N/A`, pois os fluxos existem e
-estão no escopo da SPEC-006.
+### R-014-04 — Resolvido — Gates dependentes do GitHub
 
-**Ação:** obter decisão humana antes de alterar arquitetura. As opções válidas
-são ampliar o ADR/SPEC para mTLS/TLS interno e identidades de curta duração, ou
-alterar formalmente o nível-alvo e aceitar as exceções com owner e prazo. O
-Review Agent não pode tomar essa decisão.
+Os runs `30111549157` e `30112871440` passaram. O último contém testes, builds,
+audits, CodeQL, Gitleaks, três scans de imagem/SBOM, DAST e gate consolidado.
 
-### R-014-03 — P1 — Proteção e centralização de logs
+### R-014-05 — Resolvido no gate — Dependências moderadas
 
-Auditoria estruturada, redação, métricas e alertas foram implementados, mas a
-stack não demonstra armazenamento de logs protegido contra alteração nem envio
-para sistema logicamente separado. Permanecem sem evidência:
+O pacote `uuid` não utilizado foi removido e a API não possui advisory. O
+advisory raiz do Dashboard continua moderate e não viola o gate high/critical;
+há owner `Maintainer`, prazo de 2026-08-23, mitigação atual e plano de upgrade
+major/testes em `docs/security/vulnerability-management.md`.
 
-- `v5.0.0-V16.4.2`;
-- `v5.0.0-V16.4.3`.
+## Apontamentos bloqueadores atuais
 
-**Ação:** definir e aprovar o destino operacional de logs, retenção, acesso,
-integridade e transporte antes de classificar esses itens como `Pass`.
+### R-014-06 — P0 — Certificado público do edge
 
-### R-014-04 — P1 — Gates dependentes do GitHub
+`v5.0.0-V12.2.2` permanece `Fail`. CI e testes locais usam certificado
+autoassinado efêmero, adequado ao ambiente isolado, mas isso não prova cadeia
+pública, hostname, validade e revogação no endpoint real.
 
-Testes, audits, Trivy e ZAP foram reproduzidos localmente. CodeQL, Gitleaks e a
-geração/publicação de SBOM estão configurados no workflow, mas ainda não existe
-execução do GitHub Actions para estes commits.
+**Ação:** provisionar o certificado publicamente confiável no ambiente de
+produção ou staging equivalente e anexar a saída reproduzível do gate
+`docs/security/production-certificate-gate.md`.
 
-**Ação:** executar o pipeline no repositório remoto e anexar os resultados antes
-do review final.
+### R-014-07 — P0 — Fonte de verdade externa para secrets
 
-### R-014-05 — P2 — Dependências moderadas
+`v5.0.0-V13.3.1` permanece `Fail`. A aplicação consome arquivos de secret e o CI
+gera PKI/credenciais efêmeras corretamente, mas nenhum Vault ou serviço
+gerenciado equivalente foi integrado e exercitado.
 
-- API: `uuid` possui um advisory moderate em APIs UUID não utilizadas pelo
-  projeto;
-- Dashboard: `echarts`/`vue-echarts` possuem advisory moderate; o input exibido
-  é numérico e validado, reduzindo a explorabilidade.
+**Ação:** escolher e integrar o gestor aprovado; evidenciar injeção sem segredo
+no repositório, rotação, revogação, auditoria e destruição conforme
+`docs/security/secrets-lifecycle.md`.
 
-O gate aprovado bloqueia high/critical, portanto estes itens não reprovam
-isoladamente a TASK. Ainda assim, a exceção precisa de owner, prazo e teste de
-upgrade major.
+Não existe exceção aprovada para nenhum dos dois apontamentos. O Review Agent
+não pode fabricar evidência operacional nem reduzir o nível ASVS aprovado.
 
 ## Decisão de release
 
-`TASK-014` permanece **em andamento** e bloqueia a `TASK-013`. Nenhuma tag
-`v1.0.0` deve ser criada enquanto este review não for substituído por
-`Approved` e os gates finais da TASK não estiverem completos.
-
+`TASK-014` permanece **em andamento / Changes Requested** e bloqueia a
+`TASK-013`. Nenhuma atualização final do README, tag `v1.0.0` ou ação de release
+deve ocorrer enquanto `R-014-06` e `R-014-07` não forem evidenciados, as duas
+linhas ASVS não migrarem para `Pass` e este parecer não for substituído por
+`Approved`.
