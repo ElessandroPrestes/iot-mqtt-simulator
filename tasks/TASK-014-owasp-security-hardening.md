@@ -2,13 +2,14 @@
 
 ## Status
 
-🟠 **Em andamento — refactor ASVS Level 2 integral autorizado**
+🟠 **Em andamento — review com 2 gates operacionais pendentes**
 
 A SPEC-006 foi aprovada por humano em 2026-07-23. Esta TASK deve ser concluída
 antes de qualquer release v1.0.0. Os controles de aplicação e infraestrutura
-foram implementados e testados. O review de 2026-07-23 permanece bloqueado pela
-triagem ASVS, por requisitos arquiteturais incompatíveis com o ADR-006 atual e
-por evidências operacionais pendentes. A TASK-013 continua bloqueada.
+foram implementados e testados. A nova revisão de 2026-07-24 resolveu os cinco
+apontamentos anteriores e permanece como `Changes Requested` exclusivamente por
+`V12.2.2` (certificado público do edge real) e `V13.3.1` (fonte de verdade
+externa para secrets). A TASK-013 continua bloqueada.
 Em 2026-07-24, a decisão humana foi manter o alvo Level 2 e eliminar os 34
 `Fail`; a emenda do ADR-006/SPEC-006 foi autorizada sem exceções permanentes.
 
@@ -59,6 +60,8 @@ alvo OWASP ASVS 5.0.0 Level 2 e cobrir adequadamente OWASP Top 10:2025.
       passaram.
 - [x] Matriz atualizada individualmente após o refactor: 32 lacunas resolvidas
       e 2 bloqueios operacionais preservados sem exceção.
+- [x] Novo Review Agent executado no commit `c28464b`: cinco apontamentos
+      anteriores resolvidos e dois P0 externos registrados.
 - [ ] Apontamentos do review resolvidos.
 - [ ] Aprovação final do Review Agent e do risco residual.
 
