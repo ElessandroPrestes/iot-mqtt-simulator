@@ -28,7 +28,7 @@ jobs:
           cache: npm
           cache-dependency-path: services/api/package-lock.json
       - run: npm ci
-      - run: npm audit --omit=dev --audit-level=high
+      - run: ../../scripts/ci/npm-audit-with-retry.sh
       - run: npm run test:coverage
         env:
           NODE_ENV: test
@@ -53,7 +53,7 @@ jobs:
           cache: npm
           cache-dependency-path: services/simulator/package-lock.json
       - run: npm ci
-      - run: npm audit --omit=dev --audit-level=high
+      - run: ../../scripts/ci/npm-audit-with-retry.sh
       - run: npm test
         env:
           NODE_ENV: test
@@ -72,7 +72,7 @@ jobs:
           cache: npm
           cache-dependency-path: services/dashboard/package-lock.json
       - run: npm ci
-      - run: npm audit --omit=dev --audit-level=high
+      - run: ../../scripts/ci/npm-audit-with-retry.sh
       - run: npm test
         env:
           NODE_ENV: test
