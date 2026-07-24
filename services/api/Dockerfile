@@ -10,7 +10,9 @@ CMD ["npm", "run", "dev"]
 FROM base AS production
 RUN npm ci --omit=dev \
     && npm cache clean --force \
-    && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
+    && mkdir -p /var/log/iot-api \
+    && chown node:node /var/log/iot-api
 COPY src ./src
 USER node
 CMD ["node", "src/index.js"]

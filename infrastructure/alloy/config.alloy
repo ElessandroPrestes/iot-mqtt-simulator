@@ -1,0 +1,35 @@
+logging {
+  level  = "info"
+  format = "json"
+}
+
+local.file_match "application" {
+  path_targets = [
+    {
+      "__path__"    = "/var/log/iot-api/*.log",
+      "service_name" = "api",
+      "environment" = "production",
+    },
+  ]
+}
+
+loki.source.file "application" {
+  targets       = local.file_match.application.targets
+  forward_to    = [loki.write.central.receiver]
+  tail_from_end = false
+}
+
+loki.write "central" {
+  endpoint {
+    url = "https://loki-gateway:8443/loki/api/v1/push"
+
+    tls_config {
+      ca_file              = "/run/secrets/internal_ca"
+      cert_file            = "/run/secrets/alloy_client_cert"
+      key_file             = "/run/secrets/alloy_client_key"
+      server_name          = "loki-gateway"
+      min_version          = "TLS12"
+      insecure_skip_verify = false
+    }
+  }
+}

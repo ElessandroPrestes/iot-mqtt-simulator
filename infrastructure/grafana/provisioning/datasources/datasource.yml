@@ -4,6 +4,29 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://prometheus:9090
+    url: https://prometheus:9090
     isDefault: true
     editable: false
+    jsonData:
+      serverName: prometheus
+      tlsAuth: true
+      tlsAuthWithCACert: true
+      tlsSkipVerify: false
+    secureJsonData:
+      tlsCACert: ${LOKI_CA_PEM}
+      tlsClientCert: ${LOKI_CLIENT_CERT_PEM}
+      tlsClientKey: ${LOKI_CLIENT_KEY_PEM}
+  - name: Loki
+    type: loki
+    access: proxy
+    url: https://loki-gateway:8443
+    editable: false
+    jsonData:
+      serverName: loki-gateway
+      tlsAuth: true
+      tlsAuthWithCACert: true
+      tlsSkipVerify: false
+    secureJsonData:
+      tlsCACert: ${LOKI_CA_PEM}
+      tlsClientCert: ${LOKI_CLIENT_CERT_PEM}
+      tlsClientKey: ${LOKI_CLIENT_KEY_PEM}

@@ -153,6 +153,8 @@ jobs:
   dast:
     name: DAST — OWASP ZAP baseline
     runs-on: ubuntu-latest
+    env:
+      SECRETS_DIR: ${{ github.workspace }}/secrets
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -165,7 +167,7 @@ jobs:
       - name: Gerar secrets efêmeros do ambiente DAST
         run: ./scripts/ci/prepare-dast-secrets.sh
       - name: Subir perfil de produção
-        run: docker compose -f docker-compose.prod.yml up -d --build broker mongo api simulator dashboard nginx
+        run: docker compose -f docker-compose.prod.yml up -d --build
         env:
           COMPOSE_PROJECT_NAME: iot-security
           PUBLIC_ORIGIN: https://localhost:8443
@@ -179,6 +181,62 @@ jobs:
           done
           docker compose -f docker-compose.prod.yml ps
           exit 1
+        env:
+          COMPOSE_PROJECT_NAME: iot-security
+          PUBLIC_ORIGIN: https://localhost:8443
+      - name: Validar observabilidade protegida por mTLS
+        run: |
+          for attempt in $(seq 1 60); do
+            if docker compose -f docker-compose.prod.yml exec -T grafana \
+              curl --fail --silent --show-error \
+                --cacert /run/secrets/internal_ca \
+                --cert /run/secrets/grafana_client_cert \
+                --key /run/secrets/grafana_client_key \
+                https://loki-gateway:8443/ready >/dev/null; then
+              break
+            fi
+            sleep 5
+          done
+
+          for attempt in $(seq 1 30); do
+            docker compose -f docker-compose.prod.yml exec -T grafana \
+              curl --fail --silent --show-error --get \
+                --cacert /run/secrets/internal_ca \
+                --cert /run/secrets/grafana_client_cert \
+                --key /run/secrets/grafana_client_key \
+                --data-urlencode 'query={service_name="api"}' \
+                --data-urlencode limit=1 \
+                https://loki-gateway:8443/loki/api/v1/query_range \
+                > /tmp/loki-query.json
+            if jq -e '.data.result | length > 0' /tmp/loki-query.json >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          jq -e '.data.result | length > 0' /tmp/loki-query.json >/dev/null
+
+          if docker compose -f docker-compose.prod.yml exec -T grafana \
+            curl --fail --silent --show-error \
+              --cacert /run/secrets/internal_ca \
+              https://loki-gateway:8443/ready >/dev/null; then
+            echo "Gateway Loki aceitou cliente sem certificado"
+            exit 1
+          fi
+
+          datasource_uid="$(
+            docker compose -f docker-compose.prod.yml exec -T grafana sh -c \
+              'read -r password < /run/secrets/grafana_admin_password;
+               exec curl --fail --silent --show-error --user "admin:${password}" \
+                 http://127.0.0.1:3000/api/datasources/name/Loki' \
+              | jq -r '.uid'
+          )"
+          test -n "$datasource_uid"
+          docker compose -f docker-compose.prod.yml exec -T grafana sh -c \
+            'read -r password < /run/secrets/grafana_admin_password;
+             exec curl --fail --silent --show-error --user "admin:${password}" \
+               "http://127.0.0.1:3000/api/datasources/uid/$1/health"' \
+            sh "$datasource_uid" \
+            | jq -e '.status == "OK"' >/dev/null
         env:
           COMPOSE_PROJECT_NAME: iot-security
           PUBLIC_ORIGIN: https://localhost:8443
@@ -206,7 +264,12 @@ jobs:
           retention-days: 14
       - if: always()
         name: Encerrar ambiente DAST
-        run: docker compose -f docker-compose.prod.yml down --volumes
+        run: |
+          docker compose -f docker-compose.prod.yml down --volumes
+          if [ -d "$SECRETS_DIR" ]; then
+            find "$SECRETS_DIR" -type f -delete
+            rmdir "$SECRETS_DIR"
+          fi
         env:
           COMPOSE_PROJECT_NAME: iot-security
           PUBLIC_ORIGIN: https://localhost:8443

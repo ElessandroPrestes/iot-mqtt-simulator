@@ -16,6 +16,7 @@ printf '%s' "$mongo_user" > "$secret_dir/mongodb_root_username"
 printf '%s' "$mongo_password" > "$secret_dir/mongodb_root_password"
 openssl rand -hex 32 > "$secret_dir/jwt_secret"
 openssl rand -hex 24 > "$secret_dir/grafana_admin_password"
+openssl rand -hex 32 > "$secret_dir/grafana_secret_key"
 
 PRINCIPAL_PASSWORD="$operator_password" node -e '
   const argon2 = require("./services/api/node_modules/argon2");
@@ -80,9 +81,15 @@ issue_certificate broker_tls broker "DNS:broker,DNS:localhost,IP:127.0.0.1" serv
 issue_certificate mongo_tls mongo "DNS:mongo,DNS:localhost,IP:127.0.0.1" serverAuth
 issue_certificate nginx_client nginx "DNS:nginx" clientAuth
 issue_certificate prometheus_client prometheus "DNS:prometheus" clientAuth
+issue_certificate prometheus_tls prometheus "DNS:prometheus" serverAuth
 issue_certificate api_client api-processor "DNS:api-processor" clientAuth
 issue_certificate simulator_client simulator "DNS:simulator" clientAuth
 issue_certificate health_client healthcheck "DNS:healthcheck" clientAuth
+issue_certificate loki_tls loki "DNS:loki" serverAuth
+issue_certificate loki_gateway_tls loki-gateway "DNS:loki-gateway" serverAuth
+issue_certificate loki_gateway_client loki-gateway "DNS:loki-gateway" clientAuth
+issue_certificate alloy_client alloy "DNS:alloy" clientAuth
+issue_certificate grafana_client grafana "DNS:grafana" clientAuth
 
 cat "$secret_dir/mongo_tls.crt" "$secret_dir/mongo_tls.key" \
   > "$secret_dir/mongo_tls.pem"
@@ -98,3 +105,7 @@ rm -f "$secret_dir"/*.csr "$secret_dir/internal_ca.srl"
 # uid/gid/mode. O runner DAST é efêmero e exclusivo; leitura no container exige
 # que os arquivos sejam world-readable durante este job.
 chmod 0444 "$secret_dir"/*
+
+if [ -n "${GITHUB_ENV:-}" ]; then
+  printf 'SECRETS_DIR=%s\n' "$secret_dir" >> "$GITHUB_ENV"
+fi

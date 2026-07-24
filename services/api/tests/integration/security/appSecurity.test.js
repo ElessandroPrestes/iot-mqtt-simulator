@@ -57,4 +57,11 @@ describe('application security policy', () => {
     expect(docs.status).toBe(404);
     expect(metrics.status).toBe(404);
   });
+
+  it('prevents storage of authenticated responses, including validation errors', async () => {
+    const response = await request(app).get('/api/v1/readings?limit=0');
+
+    expect(response.status).toBe(400);
+    expect(response.headers['cache-control']).toBe('no-store');
+  });
 });

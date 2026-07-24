@@ -13,6 +13,10 @@ describe('production internal TLS topology', () => {
   const dashboard = read('services/dashboard/nginx.conf');
   const broker = read('services/broker/mosquitto.prod.conf');
   const prometheus = read('infrastructure/prometheus/prometheus.yml');
+  const prometheusWeb = read('infrastructure/prometheus/web.yml');
+  const grafanaDatasource = read(
+    'infrastructure/grafana/provisioning/datasources/datasource.yml'
+  );
   const mongoBootstrap = read('infrastructure/mongodb/10-create-x509-user.js');
 
   it('requires certificate identities on MQTT and removes password auth', () => {
@@ -58,6 +62,12 @@ describe('production internal TLS topology', () => {
     expect(prometheus).toMatch(/cert_file: \/run\/secrets\/prometheus_client_cert/);
     expect(prometheus).toMatch(/key_file: \/run\/secrets\/prometheus_client_key/);
     expect(prometheus).toMatch(/insecure_skip_verify: false/);
+
+    expect(prometheusWeb).toMatch(/client_auth_type: RequireAndVerifyClientCert/);
+    expect(prometheusWeb).toMatch(/client_allowed_sans:\n\s+- grafana/);
+    expect(prometheusWeb).toMatch(/min_version: TLS12/);
+    expect(grafanaDatasource).toMatch(/url: https:\/\/prometheus:9090/);
+    expect(grafanaDatasource).not.toMatch(/url: http:\/\/prometheus:9090/);
   });
 
   it('pins approved cipher suites on every TLS server', () => {

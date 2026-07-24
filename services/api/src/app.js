@@ -86,6 +86,10 @@ function createApp(options = {}) {
   app.use(morgan('combined', {
     stream: { write: (msg) => logger.http(msg.trim()) },
   }));
+  app.use('/api/v1', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
 
   // Prometheus duration tracking
   app.use((req, res, next) => {

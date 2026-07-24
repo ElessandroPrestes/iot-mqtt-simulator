@@ -114,6 +114,7 @@ services:
       CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN deve ser definido}
       SWAGGER_ENABLED: "false"
       LOG_LEVEL: info
+      LOG_FILE: /var/log/iot-api/application.log
       TEMP_WARN_THRESHOLD: ${TEMP_WARN_THRESHOLD:-70}
       TEMP_CRITICAL_THRESHOLD: ${TEMP_CRITICAL_THRESHOLD:-90}
       PRESSURE_WARN_THRESHOLD: ${PRESSURE_WARN_THRESHOLD:-8.5}
@@ -130,6 +131,8 @@ services:
       - api_tls_key
       - jwt_secret
       - auth_principals
+    volumes:
+      - api_logs:/var/log/iot-api
     tmpfs:
       - /tmp
     depends_on:
@@ -272,14 +275,18 @@ services:
     volumes:
       - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./infrastructure/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./infrastructure/prometheus/web.yml:/etc/prometheus/web.yml:ro
       - prometheus_data:/prometheus
     secrets:
       - internal_ca
       - prometheus_client_cert
       - prometheus_client_key
+      - prometheus_tls_cert
+      - prometheus_tls_key
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
+      - --web.config.file=/etc/prometheus/web.yml
     tmpfs:
       - /tmp
     networks:
@@ -289,35 +296,141 @@ services:
       api:
         condition: service_healthy
 
+  loki:
+    image: grafana/loki:3.7.0@sha256:c316b7c7589a5eeca843b6926c7446149d18300b79ac8538dc4ae063bc478da2
+    restart: always
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - ./infrastructure/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    secrets:
+      - internal_ca
+      - loki_tls_cert
+      - loki_tls_key
+    command:
+      - -config.file=/etc/loki/loki.yml
+      - -target=all
+    tmpfs:
+      - /tmp
+    networks:
+      - observability
+
+  loki-gateway:
+    image: nginx:alpine@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752
+    restart: always
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    volumes:
+      - ./infrastructure/loki/gateway.conf:/etc/nginx/nginx.conf:ro
+    secrets:
+      - internal_ca
+      - loki_gateway_tls_cert
+      - loki_gateway_tls_key
+      - loki_gateway_client_cert
+      - loki_gateway_client_key
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    networks:
+      - observability
+    depends_on:
+      - loki
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  alloy:
+    image: grafana/alloy:v1.18.0@sha256:491b0578c04983fd54fe99b587b6fab4404dc46d0dc16677bd6b00cc1140b308
+    restart: always
+    user: "473:473"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - ./infrastructure/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - api_logs:/var/log/iot-api:ro
+      - alloy_data:/var/lib/alloy
+    secrets:
+      - internal_ca
+      - alloy_client_cert
+      - alloy_client_key
+    command:
+      - run
+      - --server.http.listen-addr=127.0.0.1:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    tmpfs:
+      - /tmp
+    networks:
+      - observability
+    depends_on:
+      loki-gateway:
+        condition: service_healthy
+
   grafana:
     image: grafana/grafana-oss:11.1.0@sha256:079600c9517b678c10cda6006b4487d3174512fd4c6cface37df7822756ed7a5
     restart: always
+    read_only: true
     security_opt:
       - no-new-privileges:true
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./infrastructure/grafana/entrypoint.sh:/etc/iot/entrypoint.sh:ro
       - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./infrastructure/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    entrypoint: ["/bin/sh", "/etc/iot/entrypoint.sh"]
     environment:
       GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_SECURITY_SECRET_KEY__FILE: /run/secrets/grafana_secret_key
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
     secrets:
       - grafana_admin_password
+      - grafana_secret_key
+      - internal_ca
+      - grafana_client_cert
+      - grafana_client_key
+    tmpfs:
+      - /tmp
     networks:
       - observability
     depends_on:
-      - prometheus
+      loki-gateway:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
 
 secrets:
   auth_principals:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/auth_principals.json
   grafana_admin_password:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/grafana_admin_password
+  grafana_secret_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/grafana_secret_key
   jwt_secret:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/jwt_secret
   internal_ca:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/internal_ca.crt
+  alloy_client_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/alloy_client.crt
+  alloy_client_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/alloy_client.key
   api_client_cert:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/api_client.crt
   api_client_key:
@@ -340,6 +453,22 @@ secrets:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/health_client.key
   health_client_pem:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/health_client.pem
+  grafana_client_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/grafana_client.crt
+  grafana_client_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/grafana_client.key
+  loki_gateway_client_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/loki_gateway_client.crt
+  loki_gateway_client_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/loki_gateway_client.key
+  loki_gateway_tls_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/loki_gateway_tls.crt
+  loki_gateway_tls_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/loki_gateway_tls.key
+  loki_tls_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/loki_tls.crt
+  loki_tls_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/loki_tls.key
   mongo_tls_pem:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/mongo_tls.pem
   nginx_client_cert:
@@ -350,6 +479,10 @@ secrets:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/prometheus_client.crt
   prometheus_client_key:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/prometheus_client.key
+  prometheus_tls_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/prometheus_tls.crt
+  prometheus_tls_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/prometheus_tls.key
   simulator_client_cert:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/simulator_client.crt
   simulator_client_key:
@@ -364,8 +497,11 @@ secrets:
     file: ${SECRETS_DIR:?SECRETS_DIR_required}/tls_private_key.key
 
 volumes:
+  alloy_data:
+  api_logs:
   broker_data:
   grafana_data:
+  loki_data:
   mongo_data:
   prometheus_data:
 
