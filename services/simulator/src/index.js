@@ -28,12 +28,24 @@ function buildSensors(count, anomalyProb) {
 async function main() {
   console.log('[Simulator] Connecting to broker...');
 
-  const client = mqtt.connect(`mqtt://${config.mqtt.host}:${config.mqtt.port}`, {
+  const client = mqtt.connect(`${config.mqtt.protocol}://${config.mqtt.host}:${config.mqtt.port}`, {
     clientId: config.mqtt.clientId,
-    username: config.mqtt.username,
-    password: config.mqtt.password,
     clean: true,
     reconnectPeriod: 3000,
+    ...(config.mqtt.protocol === 'mqtts'
+      ? {
+          ca: config.mqtt.ca,
+          cert: config.mqtt.cert,
+          key: config.mqtt.key,
+          rejectUnauthorized: true,
+          servername: config.mqtt.host,
+          minVersion: 'TLSv1.2',
+          ciphers: config.mqtt.ciphers,
+        }
+      : {
+          username: config.mqtt.username,
+          password: config.mqtt.password,
+        }),
   });
 
   client.on('connect', () => {

@@ -7,7 +7,7 @@ upstream api {
 }
 
 upstream dashboard {
-    server dashboard:80;
+    server dashboard:8443;
 }
 
 server {
@@ -25,6 +25,8 @@ server {
     ssl_certificate /run/secrets/tls_certificate;
     ssl_certificate_key /run/secrets/tls_private_key;
     ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256;
+    ssl_conf_command Ciphersuites TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256;
     ssl_session_timeout 1d;
     ssl_session_cache shared:TLS:10m;
     ssl_session_tickets off;
@@ -50,9 +52,20 @@ server {
     proxy_hide_header X-Frame-Options;
     proxy_hide_header X-Content-Type-Options;
 
+    proxy_ssl_verify on;
+    proxy_ssl_verify_depth 2;
+    proxy_ssl_trusted_certificate /run/secrets/internal_ca;
+    proxy_ssl_certificate /run/secrets/nginx_client_cert;
+    proxy_ssl_certificate_key /run/secrets/nginx_client_key;
+    proxy_ssl_session_reuse on;
+    proxy_ssl_protocols TLSv1.2 TLSv1.3;
+    proxy_ssl_ciphers ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256;
+
     location = /api/v1/auth/login {
         limit_req zone=login burst=2 nodelay;
-        proxy_pass http://api;
+        proxy_pass https://api;
+        proxy_ssl_name api;
+        proxy_ssl_server_name on;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -61,7 +74,9 @@ server {
 
     location /api/ {
         limit_req zone=api burst=20 nodelay;
-        proxy_pass http://api;
+        proxy_pass https://api;
+        proxy_ssl_name api;
+        proxy_ssl_server_name on;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -69,7 +84,9 @@ server {
     }
 
     location /socket.io/ {
-        proxy_pass http://api/socket.io/;
+        proxy_pass https://api/socket.io/;
+        proxy_ssl_name api;
+        proxy_ssl_server_name on;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -80,7 +97,9 @@ server {
     }
 
     location = /health {
-        proxy_pass http://api/health;
+        proxy_pass https://api/health;
+        proxy_ssl_name api;
+        proxy_ssl_server_name on;
         proxy_set_header X-Forwarded-Proto https;
     }
 
@@ -93,7 +112,9 @@ server {
     }
 
     location / {
-        proxy_pass http://dashboard/;
+        proxy_pass https://dashboard/;
+        proxy_ssl_name dashboard;
+        proxy_ssl_server_name on;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

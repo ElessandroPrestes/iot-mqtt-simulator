@@ -100,13 +100,27 @@ function init(socketIo, mqttConfig = {
 }) {
   io = socketIo;
 
-  const client = mqtt.connect(`mqtt://${mqttConfig.host}:${mqttConfig.port}`, {
+  const protocol = mqttConfig.protocol || 'mqtt';
+  const secure = protocol === 'mqtts';
+  const client = mqtt.connect(`${protocol}://${mqttConfig.host}:${mqttConfig.port}`, {
     clientId: mqttConfig.clientId,
-    username: mqttConfig.username,
-    password: mqttConfig.password,
     clean: true,
     connectTimeout: 10_000,
     reconnectPeriod: 5000,
+    ...(secure
+      ? {
+          ca: mqttConfig.ca,
+          cert: mqttConfig.cert,
+          key: mqttConfig.key,
+          rejectUnauthorized: mqttConfig.rejectUnauthorized,
+          servername: mqttConfig.host,
+          minVersion: 'TLSv1.2',
+          ciphers: mqttConfig.ciphers,
+        }
+      : {
+          username: mqttConfig.username,
+          password: mqttConfig.password,
+        }),
   });
 
   client.on('connect', () => {

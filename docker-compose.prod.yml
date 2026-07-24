@@ -16,9 +16,11 @@ services:
       - ./services/broker/acl:/mosquitto/config/acl:ro
       - broker_data:/mosquitto/data
     secrets:
-      - mosquitto_password_file
-      - mqtt_health_username
-      - mqtt_health_password
+      - internal_ca
+      - broker_tls_cert
+      - broker_tls_key
+      - health_client_cert
+      - health_client_key
     tmpfs:
       - /tmp
     networks:
@@ -27,7 +29,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "mosquitto_pub -h 127.0.0.1 -u \"$$(cat /run/secrets/mqtt_health_username)\" -P \"$$(cat /run/secrets/mqtt_health_password)\" -t healthcheck -m ping -i healthcheck",
+          "mosquitto_pub -h 127.0.0.1 -p 8883 --cafile /run/secrets/internal_ca --cert /run/secrets/health_client_cert --key /run/secrets/health_client_key -t healthcheck -m ping -i healthcheck",
         ]
       interval: 10s
       timeout: 5s
@@ -40,6 +42,7 @@ services:
       - no-new-privileges:true
     volumes:
       - mongo_data:/data/db
+      - ./infrastructure/mongodb/10-create-x509-user.js:/docker-entrypoint-initdb.d/10-create-x509-user.js:ro
     environment:
       MONGO_INITDB_DATABASE: iot_dashboard
       MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongodb_root_username
@@ -47,13 +50,25 @@ services:
     secrets:
       - mongodb_root_username
       - mongodb_root_password
+      - internal_ca
+      - mongo_tls_pem
+      - health_client_pem
+    command:
+      - mongod
+      - --bind_ip_all
+      - --tlsMode
+      - requireTLS
+      - --tlsCAFile
+      - /run/secrets/internal_ca
+      - --tlsCertificateKeyFile
+      - /run/secrets/mongo_tls_pem
     networks:
       - backend
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "mongosh --quiet --host 127.0.0.1 -u \"$$(cat /run/secrets/mongodb_root_username)\" -p \"$$(cat /run/secrets/mongodb_root_password)\" --authenticationDatabase admin --eval \"db.adminCommand('ping').ok\"",
+          "mongosh --quiet --host 127.0.0.1 --tls --tlsCAFile /run/secrets/internal_ca --tlsCertificateKeyFile /run/secrets/health_client_pem -u \"$$(cat /run/secrets/mongodb_root_username)\" -p \"$$(cat /run/secrets/mongodb_root_password)\" --authenticationDatabase admin --eval \"db.adminCommand('ping').ok\"",
         ]
       interval: 10s
       timeout: 5s
@@ -74,13 +89,17 @@ services:
     environment:
       NODE_ENV: production
       API_PORT: 3000
-      MONGODB_URI_FILE: /run/secrets/mongodb_uri
+      MONGODB_URI: mongodb://CN%3Dapi-processor@mongo:27017/iot_dashboard?authSource=%24external&authMechanism=MONGODB-X509&tls=true
       MONGODB_DB_NAME: iot_dashboard
       MQTT_BROKER_HOST: broker
-      MQTT_BROKER_PORT: 1883
-      MQTT_USERNAME_FILE: /run/secrets/mqtt_api_username
-      MQTT_PASSWORD_FILE: /run/secrets/mqtt_api_password
+      MQTT_BROKER_PORT: 8883
       MQTT_CLIENT_ID_API: api-processor
+      INTERNAL_CA_FILE: /run/secrets/internal_ca
+      API_CLIENT_CERT_FILE: /run/secrets/api_client_cert
+      API_CLIENT_KEY_FILE: /run/secrets/api_client_key
+      API_TLS_CERT_FILE: /run/secrets/api_tls_cert
+      API_TLS_KEY_FILE: /run/secrets/api_tls_key
+      HEALTHCHECK_HOST: api
       JWT_SECRET_FILE: /run/secrets/jwt_secret
       AUTH_PRINCIPALS_FILE: /run/secrets/auth_principals
       JWT_ISSUER: iot-mqtt-simulator-api
@@ -104,9 +123,11 @@ services:
       VIBRATION_WARN_THRESHOLD: ${VIBRATION_WARN_THRESHOLD:-4.5}
       VIBRATION_CRITICAL_THRESHOLD: ${VIBRATION_CRITICAL_THRESHOLD:-6}
     secrets:
-      - mongodb_uri
-      - mqtt_api_username
-      - mqtt_api_password
+      - internal_ca
+      - api_client_cert
+      - api_client_key
+      - api_tls_cert
+      - api_tls_key
       - jwt_secret
       - auth_principals
     tmpfs:
@@ -120,7 +141,7 @@ services:
       - backend
       - frontend
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: ["CMD", "node", "src/utils/healthcheck.js"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -139,16 +160,18 @@ services:
     environment:
       NODE_ENV: production
       MQTT_BROKER_HOST: broker
-      MQTT_BROKER_PORT: 1883
-      MQTT_USERNAME_FILE: /run/secrets/mqtt_simulator_username
-      MQTT_PASSWORD_FILE: /run/secrets/mqtt_simulator_password
+      MQTT_BROKER_PORT: 8883
       MQTT_CLIENT_ID_SIM: simulator
+      INTERNAL_CA_FILE: /run/secrets/internal_ca
+      SIMULATOR_CLIENT_CERT_FILE: /run/secrets/simulator_client_cert
+      SIMULATOR_CLIENT_KEY_FILE: /run/secrets/simulator_client_key
       SIMULATOR_INTERVAL_MS: ${SIMULATOR_INTERVAL_MS:-2000}
       SIMULATOR_SENSORS_COUNT: ${SIMULATOR_SENSORS_COUNT:-8}
       SIMULATOR_ANOMALY_PROBABILITY: ${SIMULATOR_ANOMALY_PROBABILITY:-0.05}
     secrets:
-      - mqtt_simulator_username
-      - mqtt_simulator_password
+      - internal_ca
+      - simulator_client_cert
+      - simulator_client_key
     tmpfs:
       - /tmp
     depends_on:
@@ -181,10 +204,14 @@ services:
       - /var/cache/nginx
       - /var/run
       - /tmp
+    secrets:
+      - internal_ca
+      - dashboard_tls_cert
+      - dashboard_tls_key
     networks:
       - frontend
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      test: ["CMD", "nginx", "-t"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -213,6 +240,9 @@ services:
     secrets:
       - tls_certificate
       - tls_private_key
+      - internal_ca
+      - nginx_client_cert
+      - nginx_client_key
     tmpfs:
       - /var/cache/nginx
       - /etc/nginx/conf.d
@@ -243,6 +273,10 @@ services:
       - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./infrastructure/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
+    secrets:
+      - internal_ca
+      - prometheus_client_cert
+      - prometheus_client_key
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -277,35 +311,57 @@ services:
 
 secrets:
   auth_principals:
-    file: ${SECRETS_DIR:-./secrets}/auth_principals.json
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/auth_principals.json
   grafana_admin_password:
-    file: ${SECRETS_DIR:-./secrets}/grafana_admin_password
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/grafana_admin_password
   jwt_secret:
-    file: ${SECRETS_DIR:-./secrets}/jwt_secret
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/jwt_secret
+  internal_ca:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/internal_ca.crt
+  api_client_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/api_client.crt
+  api_client_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/api_client.key
+  api_tls_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/api_tls.crt
+  api_tls_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/api_tls.key
+  broker_tls_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/broker_tls.crt
+  broker_tls_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/broker_tls.key
+  dashboard_tls_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/dashboard_tls.crt
+  dashboard_tls_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/dashboard_tls.key
+  health_client_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/health_client.crt
+  health_client_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/health_client.key
+  health_client_pem:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/health_client.pem
+  mongo_tls_pem:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/mongo_tls.pem
+  nginx_client_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/nginx_client.crt
+  nginx_client_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/nginx_client.key
+  prometheus_client_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/prometheus_client.crt
+  prometheus_client_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/prometheus_client.key
+  simulator_client_cert:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/simulator_client.crt
+  simulator_client_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/simulator_client.key
   mongodb_root_password:
-    file: ${SECRETS_DIR:-./secrets}/mongodb_root_password
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/mongodb_root_password
   mongodb_root_username:
-    file: ${SECRETS_DIR:-./secrets}/mongodb_root_username
-  mongodb_uri:
-    file: ${SECRETS_DIR:-./secrets}/mongodb_uri
-  mosquitto_password_file:
-    file: ${SECRETS_DIR:-./secrets}/mosquitto_password_file
-  mqtt_api_password:
-    file: ${SECRETS_DIR:-./secrets}/mqtt_api_password
-  mqtt_api_username:
-    file: ${SECRETS_DIR:-./secrets}/mqtt_api_username
-  mqtt_health_password:
-    file: ${SECRETS_DIR:-./secrets}/mqtt_health_password
-  mqtt_health_username:
-    file: ${SECRETS_DIR:-./secrets}/mqtt_health_username
-  mqtt_simulator_password:
-    file: ${SECRETS_DIR:-./secrets}/mqtt_simulator_password
-  mqtt_simulator_username:
-    file: ${SECRETS_DIR:-./secrets}/mqtt_simulator_username
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/mongodb_root_username
   tls_certificate:
-    file: ${SECRETS_DIR:-./secrets}/tls_certificate.crt
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/tls_certificate.crt
   tls_private_key:
-    file: ${SECRETS_DIR:-./secrets}/tls_private_key.key
+    file: ${SECRETS_DIR:?SECRETS_DIR_required}/tls_private_key.key
 
 volumes:
   broker_data:

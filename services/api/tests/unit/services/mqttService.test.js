@@ -53,6 +53,34 @@ describe('mqttService', () => {
     expect(mockClient.on).toHaveBeenCalledWith('message', expect.any(Function));
   });
 
+  it('uses verified mTLS without password credentials in production', () => {
+    mqttService.init({}, {
+      host: 'broker',
+      port: 8883,
+      protocol: 'mqtts',
+      clientId: 'api-processor',
+      ca: 'internal-ca',
+      cert: 'api-client-cert',
+      key: 'api-client-key',
+      rejectUnauthorized: true,
+    });
+
+    expect(mqtt.connect).toHaveBeenCalledWith(
+      'mqtts://broker:8883',
+      expect.objectContaining({
+        ca: 'internal-ca',
+        cert: 'api-client-cert',
+        key: 'api-client-key',
+        rejectUnauthorized: true,
+        servername: 'broker',
+        minVersion: 'TLSv1.2',
+      })
+    );
+    const options = mqtt.connect.mock.calls[0][1];
+    expect(options).not.toHaveProperty('username');
+    expect(options).not.toHaveProperty('password');
+  });
+
   it('creates an alert if status is not normal and no active alert exists', async () => {
     mqttService.init({});
     strategyContext.classify.mockReturnValue('warning');

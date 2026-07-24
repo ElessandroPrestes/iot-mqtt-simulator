@@ -1,5 +1,7 @@
 require('dotenv').config();
 const http = require('http');
+const https = require('https');
+const tls = require('tls');
 const mongoose = require('mongoose');
 const { createApp } = require('./app');
 const { createSocketServer } = require('./websocket/socketServer');
@@ -17,12 +19,24 @@ async function bootstrap() {
   await mongoose.connect(runtimeConfig.mongo.uri, {
     dbName: runtimeConfig.mongo.dbName,
     serverSelectionTimeoutMS: 10_000,
+    ...(runtimeConfig.production
+      ? {
+          tls: true,
+          secureContext: tls.createSecureContext({
+            ...runtimeConfig.mongo.tls,
+            minVersion: 'TLSv1.2',
+            ciphers: runtimeConfig.mqtt.ciphers,
+          }),
+        }
+      : {}),
   });
   logger.info('MongoDB connected');
 
   // Express + HTTP
   const app    = createApp({ securityConfig });
-  const server = http.createServer(app);
+  const server = runtimeConfig.production
+    ? https.createServer(runtimeConfig.apiTls, app)
+    : http.createServer(app);
 
   // Socket.io
   const io = createSocketServer(server, securityConfig);
