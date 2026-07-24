@@ -1,6 +1,6 @@
 # Baseline OWASP ASVS 5.0.0 Level 2
 
-**Status:** Baseline aprovada — triagem por requisito em andamento
+**Status:** Review bloqueado — triagem por requisito e decisão arquitetural pendentes
 **Data:** 2026-07-23
 **Aprovação humana da baseline:** 2026-07-23
 **Nível-alvo:** Level 2  
@@ -115,7 +115,27 @@ Level 1/2 contendo:
 Requisitos N/A devem ser avaliados individualmente. A classificação preliminar
 por capítulo não autoriza marcar automaticamente todos os IDs daquele capítulo.
 
-## 7. Gates
+## 7. Resultado do review de 2026-07-23
+
+Os controles implementados passaram nas suítes da aplicação, no smoke test da
+stack de produção, no Trivy e no ZAP. Isso não encerra o nível-alvo ASVS. Foram
+identificados requisitos aplicáveis que conflitam com o ADR-006 ou ainda não
+possuem evidência operacional:
+
+| Requirement | Estado atual | Motivo |
+|---|---|---|
+| `v5.0.0-V12.3.1` | Fail | MQTT e MongoDB trafegam plaintext na rede Docker |
+| `v5.0.0-V12.3.3` | Fail | Nginx, API e Dashboard usam HTTP interno |
+| `v5.0.0-V13.2.1` | Fail | MongoDB e MQTT usam credenciais persistentes |
+| `v5.0.0-V16.4.2` | Fail | Não há evidência de armazenamento imutável de logs |
+| `v5.0.0-V16.4.3` | Fail | Logs não são enviados a sistema logicamente separado |
+
+Esses itens não podem ser convertidos para `N/A` porque os fluxos existem e
+estão no escopo. A correção exige nova decisão humana sobre arquitetura e
+operação. O review completo está em
+`reviews/REVIEW-TASK-014-owasp-security-hardening.md`.
+
+## 8. Gates
 
 - [x] Fonte estável e hash registrados.
 - [x] Inventário Level 1/2 contado por capítulo.

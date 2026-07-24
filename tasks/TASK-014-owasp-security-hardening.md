@@ -2,11 +2,13 @@
 
 ## Status
 
-🟡 **Em andamento — implementação**
+🟠 **Em andamento — review com changes requested**
 
 A SPEC-006 foi aprovada por humano em 2026-07-23. Esta TASK deve ser concluída
-antes de qualquer release v1.0.0. Os artefatos de arquitetura e baseline foram
-iniciados; código de aplicação aguarda aprovação do ADR-006.
+antes de qualquer release v1.0.0. Os controles de aplicação e infraestrutura
+foram implementados e testados. O review de 2026-07-23 permanece bloqueado pela
+triagem ASVS, por requisitos arquiteturais incompatíveis com o ADR-006 atual e
+por evidências operacionais pendentes. A TASK-013 continua bloqueada.
 
 ## Fase
 
@@ -42,6 +44,12 @@ alvo OWASP ASVS 5.0.0 Level 2 e cobrir adequadamente OWASP Top 10:2025.
 - [x] Matriz OWASP Top 10 Web/API criada.
 - [x] ADR-006 e riscos residuais aprovados por humano.
 - [x] Implementação iniciada.
+- [x] Hardening de API, Dashboard, Socket.io e ingestão MQTT implementado.
+- [x] Stack de produção com TLS externo, secrets, ACL e portas internas testada.
+- [x] Testes, audits, Trivy e ZAP executados localmente.
+- [x] Review formal executado.
+- [ ] Apontamentos do review resolvidos.
+- [ ] Aprovação final do Review Agent e do risco residual.
 
 ## 1. Artefatos e modificações necessárias
 
@@ -194,83 +202,84 @@ Não misturar release, changelog ou tag nesses commits.
 
 ### A01 — Broken Access Control
 
-- [ ] REST aplica deny by default e RBAC.
-- [ ] `viewer` não resolve alertas; `operator` resolve.
-- [ ] Socket.io rejeita handshake anônimo e room inválida.
-- [ ] Métricas e Swagger não ficam públicos em produção.
-- [ ] CORS rejeita origem não autorizada.
+- [x] REST aplica deny by default e RBAC.
+- [x] `viewer` não resolve alertas; `operator` resolve.
+- [x] Socket.io rejeita handshake anônimo e room inválida.
+- [x] Métricas e Swagger não ficam públicos em produção.
+- [x] CORS rejeita origem não autorizada.
 
 ### A02 — Security Misconfiguration
 
-- [ ] Produção falha sem configuração segura.
-- [ ] Não existem fallbacks de segredo/credencial.
-- [ ] Apenas Nginx publica a aplicação.
-- [ ] Headers e `trust proxy` possuem testes.
-- [ ] MongoDB exige autenticação em produção.
+- [x] Produção falha sem configuração segura.
+- [x] Não existem fallbacks de segredo/credencial.
+- [x] Apenas Nginx publica a aplicação.
+- [x] Headers e `trust proxy` possuem testes.
+- [x] MongoDB exige autenticação em produção.
 
 ### A03/A08 — Supply Chain e Integrity
 
-- [ ] Lockfiles são usados com `npm ci`.
+- [x] Lockfiles são usados com `npm ci`.
 - [ ] SAST e secret scanning passam.
-- [ ] Dependency e image scanning não possuem falha bloqueadora.
+- [x] Dependency e image scanning não possuem falha bloqueadora.
 - [ ] SBOM identifica commit e artefatos.
-- [ ] Actions usam SHA e permissões mínimas.
+- [x] Actions usam SHA e permissões mínimas.
 
 ### A04 — Cryptographic Failures
 
-- [ ] TLS externo aceita apenas TLS 1.2/1.3.
-- [ ] HTTP redireciona para HTTPS.
-- [ ] JWT rejeita algoritmo, issuer e audience inválidos.
-- [ ] Segredos fracos/ausentes impedem bootstrap.
-- [ ] MQTT externo usa TLS e ACL.
+- [x] TLS externo aceita apenas TLS 1.2/1.3.
+- [x] HTTP redireciona para HTTPS.
+- [x] JWT rejeita algoritmo, issuer e audience inválidos.
+- [x] Segredos fracos/ausentes impedem bootstrap.
+- [x] MQTT externo permanece desabilitado; o listener interno usa autenticação
+      e ACL.
 
 ### A05 — Injection
 
-- [ ] Login, params, queries e bodies rejeitam entradas fora do schema.
-- [ ] NoSQL injection e prototype pollution possuem testes.
-- [ ] MQTT inválido não é persistido nem transmitido.
-- [ ] Payloads acima dos limites retornam/repercutem erro controlado.
+- [x] Login, params, queries e bodies rejeitam entradas fora do schema.
+- [x] NoSQL injection e prototype pollution possuem testes.
+- [x] MQTT inválido não é persistido nem transmitido.
+- [x] Payloads acima dos limites retornam/repercutem erro controlado.
 
 ### A06 — Insecure Design
 
-- [ ] Threat model e abuse cases foram aprovados.
-- [ ] ADR-006 foi aprovado.
-- [ ] Rate limits específicos foram testados.
+- [x] Threat model e abuse cases foram aprovados.
+- [x] ADR-006 foi aprovado.
+- [x] Rate limits específicos foram testados.
 - [ ] Riscos residuais têm owner e justificativa.
 
 ### A07 — Authentication Failures
 
-- [ ] Não existe auto-login nem credencial hardcoded.
-- [ ] Access token não é persistido no browser.
-- [ ] Refresh token é rotativo, revogável e armazenado somente como hash.
-- [ ] Logout revoga a sessão.
-- [ ] Brute force recebe `429` após o limite.
-- [ ] Mensagem de login não permite enumeração.
+- [x] Não existe auto-login nem credencial hardcoded.
+- [x] Access token não é persistido no browser.
+- [x] Refresh token é rotativo, revogável e armazenado somente como hash.
+- [x] Logout revoga a sessão.
+- [x] Brute force recebe `429` após o limite.
+- [x] Mensagem de login não permite enumeração.
 
 ### A09 — Logging and Alerting
 
-- [ ] Eventos de segurança possuem correlation ID.
-- [ ] Logs não contêm tokens, cookies, senhas ou secrets.
+- [x] Eventos de segurança possuem correlation ID.
+- [x] Logs não contêm tokens, cookies, senhas ou secrets.
 - [ ] Alertas de brute force, `401/403/429`, `5xx` e rejeição MQTT disparam em
       teste.
-- [ ] Labels Prometheus possuem cardinalidade limitada.
+- [x] Labels Prometheus possuem cardinalidade limitada.
 
 ### A10 — Exceptional Conditions
 
-- [ ] Erros falham fechado e não expõem stack em produção.
-- [ ] Exceções de processo causam shutdown controlado.
-- [ ] Falhas de MongoDB/MQTT/JWT/configuração possuem testes.
-- [ ] Health check reflete dependências obrigatórias.
+- [x] Erros falham fechado e não expõem stack em produção.
+- [x] Exceções de processo causam shutdown controlado.
+- [x] Falhas de MongoDB/MQTT/JWT/configuração possuem testes.
+- [x] Health check reflete dependências obrigatórias.
 
 ### Gates finais
 
-- [ ] Testes da API, Dashboard e Simulator passam.
-- [ ] Cobertura mínima do projeto é mantida.
-- [ ] DAST baseline não apresenta alerta `high`.
+- [x] Testes da API, Dashboard e Simulator passam.
+- [x] Cobertura mínima do projeto é mantida.
+- [x] DAST baseline não apresenta alerta `high`.
 - [ ] Matriz ASVS 5.0.0 Level 2 não possui item aplicável em `Fail`.
 - [ ] Review Agent: `Approved`.
 - [ ] `PROJECT.md`, README, OpenAPI e runbooks refletem o estado testado.
-- [ ] Nenhuma alteração de `CHANGELOG.md`, tag `v1.0.0` ou merge de release foi
+- [x] Nenhuma alteração de `CHANGELOG.md`, tag `v1.0.0` ou merge de release foi
       realizada.
 
 ## 5. Critério de conclusão
