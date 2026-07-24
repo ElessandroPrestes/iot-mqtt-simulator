@@ -5,11 +5,21 @@ const authService = require('../services/authService');
 const { parseCookies, serializeRefreshCookie } = require('../utils/cookies');
 const { successResponse } = require('../utils/responseFormatter');
 const { auditSecurityEvent } = require('../middleware/securityAudit');
+const { createAuthenticate } = require('../middleware/authenticate');
 
 const loginSchema = Joi.object({
   username: Joi.string().trim().min(3).max(64).pattern(/^[a-zA-Z0-9._-]+$/).required(),
   password: Joi.string().min(8).max(256).required(),
+  totp: Joi.string().pattern(/^\d{6}$/).optional(),
 }).unknown(false);
+
+const sessionParamsSchema = Joi.object({
+  familyId: Joi.string().guid({ version: ['uuidv4'] }).required(),
+}).unknown(false);
+
+const adminSessionParamsSchema = sessionParamsSchema.keys({
+  principalId: Joi.string().pattern(/^[a-zA-Z0-9_-]{3,64}$/).required(),
+});
 
 function setRefreshCookie(res, token, config) {
   res.setHeader('Set-Cookie', serializeRefreshCookie(
@@ -57,6 +67,12 @@ function requireTrustedBrowserRequest(config) {
 function createAuthRouter(config) {
   const router = express.Router();
   const trustedBrowser = requireTrustedBrowserRequest(config);
+  const authenticate = createAuthenticate(config);
+
+  router.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
 
   /**
    * @swagger
@@ -70,6 +86,7 @@ function createAuthRouter(config) {
       const principal = await authService.authenticateCredentials(
         req.body.username,
         req.body.password,
+        req.body.totp,
         config
       );
       const session = await authService.createSession(principal, config);
@@ -123,6 +140,60 @@ function createAuthRouter(config) {
       return next(error);
     }
   });
+
+  router.get('/sessions', authenticate, async (req, res, next) => {
+    try {
+      const sessions = await authService.listSessions(req.user.id);
+      return res.json(successResponse(sessions));
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  router.delete(
+    '/sessions/:familyId',
+    authenticate,
+    trustedBrowser,
+    validate(sessionParamsSchema, 'params'),
+    async (req, res, next) => {
+      try {
+        await authService.revokeFamily(req.params.familyId, req.user.id);
+        auditSecurityEvent(req, 'auth.session_revoke', 'success');
+        return res.json(successResponse(null));
+      } catch (error) {
+        return next(error);
+      }
+    }
+  );
+
+  router.delete(
+    '/admin/sessions/:principalId/:familyId',
+    authenticate,
+    trustedBrowser,
+    validate(adminSessionParamsSchema, 'params'),
+    async (req, res, next) => {
+      if (!req.user.securityAdmin) {
+        auditSecurityEvent(req, 'auth.session_admin_revoke', 'denied');
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Insufficient permissions',
+            details: [],
+            correlationId: req.id,
+          },
+        });
+      }
+
+      try {
+        await authService.revokeFamily(req.params.familyId, req.params.principalId);
+        auditSecurityEvent(req, 'auth.session_admin_revoke', 'success');
+        return res.json(successResponse(null));
+      } catch (error) {
+        return next(error);
+      }
+    }
+  );
 
   return router;
 }

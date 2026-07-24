@@ -3,6 +3,7 @@ const {
   parseOrigins,
   parsePrincipals,
 } = require('../../../src/config/security');
+const argon2 = require('argon2');
 
 describe('security configuration', () => {
   it('rejects wildcard CORS in production', () => {
@@ -31,5 +32,54 @@ describe('security configuration', () => {
     expect(config.corsOrigins).toEqual(['http://localhost']);
     expect(config.swaggerEnabled).toBe(true);
     expect(config.principals).toEqual([]);
+  });
+
+  it('requires TOTP and approved Argon2id parameters for production principals', async () => {
+    const strongHash = await argon2.hash('correct horse battery staple', {
+      type: argon2.argon2id,
+      memoryCost: 19_456,
+      timeCost: 2,
+      parallelism: 1,
+    });
+    const weakHash = await argon2.hash('correct horse battery staple', {
+      type: argon2.argon2id,
+      memoryCost: 4096,
+      timeCost: 1,
+      parallelism: 1,
+    });
+
+    const principal = {
+      id: 'operator-1',
+      username: 'operator',
+      role: 'operator',
+      enabled: true,
+      securityAdmin: true,
+      totpSecret: 'JBSWY3DPEHPK3PXP',
+    };
+
+    expect(parsePrincipals({
+      AUTH_PRINCIPALS_JSON: JSON.stringify([{
+        ...principal,
+        passwordHash: strongHash,
+      }]),
+    }, 'test')).toEqual([expect.objectContaining({
+      username: 'operator',
+      securityAdmin: true,
+    })]);
+
+    expect(() => parsePrincipals({
+      AUTH_PRINCIPALS_JSON: JSON.stringify([{
+        ...principal,
+        passwordHash: weakHash,
+      }]),
+    }, 'test', { requireMfa: true })).toThrow('Argon2id parameters');
+
+    expect(() => parsePrincipals({
+      AUTH_PRINCIPALS_JSON: JSON.stringify([{
+        ...principal,
+        passwordHash: strongHash,
+        totpSecret: undefined,
+      }]),
+    }, 'test', { requireMfa: true })).toThrow('TOTP');
   });
 });

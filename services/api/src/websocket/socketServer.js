@@ -7,13 +7,13 @@ const SENSOR_ID_PATTERN = /^[A-Z][A-Z0-9_-]{2,63}$/;
 const MAX_SENSOR_SUBSCRIPTIONS = 50;
 
 function socketAuthentication(config) {
-  return (socket, next) => {
+  return async (socket, next) => {
     try {
       const token = socket.handshake.auth?.token;
       if (typeof token !== 'string' || token.length > 4096) {
         throw new Error('Missing access token');
       }
-      socket.data.user = verifyAccessToken(token, config);
+      socket.data.user = await verifyAccessToken(token, config);
       auditSecurityEvent({
         id: socket.id,
         ip: socket.handshake.address,

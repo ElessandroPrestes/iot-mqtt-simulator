@@ -37,7 +37,20 @@ function parseOrigins(rawOrigins, environment) {
   return origins;
 }
 
-function parsePrincipals(env, environment) {
+function hasApprovedArgon2idParameters(passwordHash) {
+  const encoded = String(passwordHash).match(/^\$argon2id\$v=19\$([^$]+)\$/u);
+  if (!encoded) return false;
+
+  const parameters = Object.fromEntries(
+    encoded[1].split(',').map((entry) => entry.split('='))
+  );
+  return Number(parameters.m) >= 19_456
+    && Number(parameters.t) >= 2
+    && Number(parameters.p) >= 1;
+}
+
+function parsePrincipals(env, environment, options = {}) {
+  const requireMfa = options.requireMfa ?? environment === 'production';
   const fileValue = readSecretFile(env.AUTH_PRINCIPALS_FILE, 'AUTH_PRINCIPALS');
 
   if (environment === 'production' && env.AUTH_PRINCIPALS_JSON) {
@@ -66,6 +79,8 @@ function parsePrincipals(env, environment) {
       passwordHash: Joi.string().pattern(/^\$argon2id\$/).required(),
       role: Joi.string().valid(...ROLES).required(),
       enabled: Joi.boolean().default(true),
+      securityAdmin: Joi.boolean().default(false),
+      totpSecret: Joi.string().uppercase().pattern(/^[A-Z2-7]{16,128}$/).optional(),
     }).unknown(false)
   );
 
@@ -84,6 +99,13 @@ function parsePrincipals(env, environment) {
     usernames.add(username);
     ids.add(principal.id);
     principal.username = username;
+
+    if (!hasApprovedArgon2idParameters(principal.passwordHash)) {
+      throw new Error('AUTH_PRINCIPALS contains weak Argon2id parameters');
+    }
+    if (requireMfa && !principal.totpSecret) {
+      throw new Error('AUTH_PRINCIPALS requires TOTP for every enabled principal');
+    }
   }
 
   return value;
@@ -105,6 +127,8 @@ function loadSecurityConfig(env = process.env) {
     refreshTokenTtlSeconds: Joi.number().integer().min(300).max(28800).required(),
     loginWindowMs: Joi.number().integer().min(60_000).required(),
     loginMaxAttempts: Joi.number().integer().min(1).max(20).required(),
+    sessionIdleTtlSeconds: Joi.number().integer().min(60).max(1800).required(),
+    maxConcurrentSessions: Joi.number().integer().min(1).max(3).required(),
   });
 
   const candidate = {
@@ -115,6 +139,8 @@ function loadSecurityConfig(env = process.env) {
     refreshTokenTtlSeconds: Number(env.REFRESH_TOKEN_TTL_SECONDS || 28_800),
     loginWindowMs: Number(env.LOGIN_RATE_WINDOW_MS || 900_000),
     loginMaxAttempts: Number(env.LOGIN_RATE_MAX || 5),
+    sessionIdleTtlSeconds: Number(env.SESSION_IDLE_TTL_SECONDS || 1800),
+    maxConcurrentSessions: Number(env.MAX_CONCURRENT_SESSIONS || 3),
   };
 
   const { error, value } = schema.validate(candidate, { abortEarly: false });
@@ -132,11 +158,13 @@ function loadSecurityConfig(env = process.env) {
     trustProxy: production ? 1 : false,
     refreshCookieName: production ? '__Host-refresh' : 'refresh_token',
     secureCookies: production,
+    mfaRequired: production || parseBoolean(env.MFA_REQUIRED, false),
   });
 }
 
 module.exports = {
   ROLES,
+  hasApprovedArgon2idParameters,
   loadSecurityConfig,
   parseOrigins,
   parsePrincipals,

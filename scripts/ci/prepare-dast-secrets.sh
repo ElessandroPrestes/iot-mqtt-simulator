@@ -30,13 +30,24 @@ openssl rand -hex 24 > "$secret_dir/grafana_admin_password"
 
 PRINCIPAL_PASSWORD="$operator_password" node -e '
   const argon2 = require("./services/api/node_modules/argon2");
+  const crypto = require("crypto");
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const bytes = crypto.randomBytes(20);
+  let bits = "";
+  for (const byte of bytes) bits += byte.toString(2).padStart(8, "0");
+  let totpSecret = "";
+  for (let offset = 0; offset < bits.length; offset += 5) {
+    totpSecret += alphabet[Number.parseInt(bits.slice(offset, offset + 5), 2)];
+  }
   argon2.hash(process.env.PRINCIPAL_PASSWORD, { type: argon2.argon2id })
     .then((passwordHash) => process.stdout.write(JSON.stringify([{
       id: "operator-1",
       username: "operator",
       passwordHash,
       role: "operator",
-      enabled: true
+      enabled: true,
+      securityAdmin: true,
+      totpSecret
     }])));
 ' > "$secret_dir/auth_principals.json"
 

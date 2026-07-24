@@ -38,6 +38,22 @@
           />
         </label>
 
+        <label class="block space-y-1">
+          <span class="metric-label">código de autenticação</span>
+          <input
+            v-model.trim="totp"
+            name="totp"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            pattern="[0-9]{6}"
+            minlength="6"
+            maxlength="6"
+            required
+            class="w-full bg-bg border border-border rounded px-3 py-2 text-ink tracking-[0.35em] focus:outline-none focus:border-accent"
+          />
+        </label>
+
         <p v-if="errorMessage" role="alert" class="text-sm text-critical">
           {{ errorMessage }}
         </p>
@@ -61,6 +77,7 @@ import { useAuthStore } from '@/stores/auth';
 
 const username = ref('');
 const password = ref('');
+const totp = ref('');
 const errorMessage = ref('');
 const authStore = useAuthStore();
 const route = useRoute();
@@ -72,8 +89,10 @@ async function submit() {
     await authStore.login({
       username: username.value,
       password: password.value,
+      totp: totp.value,
     });
     password.value = '';
+    totp.value = '';
     const redirect = typeof route.query.redirect === 'string'
       && route.query.redirect.startsWith('/')
       && !route.query.redirect.startsWith('//')
@@ -82,6 +101,7 @@ async function submit() {
     await router.replace(redirect);
   } catch {
     password.value = '';
+    totp.value = '';
     errorMessage.value = 'Não foi possível entrar. Verifique suas credenciais.';
   }
 }

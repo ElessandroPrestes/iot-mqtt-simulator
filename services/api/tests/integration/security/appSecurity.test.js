@@ -1,7 +1,11 @@
 const request = require('supertest');
 const { createApp } = require('../../../src/app');
 
-jest.mock('../../../src/middleware/authenticate', () => (req, res, next) => next());
+jest.mock('../../../src/middleware/authenticate', () => {
+  const authenticate = (req, res, next) => next();
+  authenticate.createAuthenticate = () => authenticate;
+  return authenticate;
+});
 
 const securityConfig = {
   environment: 'production',

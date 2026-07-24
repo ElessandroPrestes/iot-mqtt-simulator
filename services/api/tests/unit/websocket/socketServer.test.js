@@ -1,4 +1,7 @@
 const jwt = require('jsonwebtoken');
+jest.mock('../../../src/services/authService', () => ({
+  validateAccessSession: jest.fn().mockResolvedValue(undefined),
+}));
 const {
   MAX_SENSOR_SUBSCRIPTIONS,
   socketAuthentication,
@@ -15,12 +18,13 @@ const config = {
     username: 'viewer',
     role: 'viewer',
     enabled: true,
+    securityAdmin: false,
   }],
 };
 
 function accessToken(overrides = {}) {
   return jwt.sign(
-    { role: 'viewer', ...overrides },
+    { role: 'viewer', sid: 'session-1', ...overrides },
     config.jwtSecret,
     {
       algorithm: 'HS256',
@@ -29,30 +33,31 @@ function accessToken(overrides = {}) {
       subject: 'viewer-1',
       jwtid: 'token-1',
       expiresIn: 300,
+      header: { typ: 'at+jwt' },
     }
   );
 }
 
 describe('Socket.io security', () => {
-  it('rejects anonymous handshakes', () => {
+  it('rejects anonymous handshakes', async () => {
     const socket = { handshake: { auth: {} }, data: {} };
     const next = jest.fn();
 
-    socketAuthentication(config)(socket, next);
+    await socketAuthentication(config)(socket, next);
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({
       data: { code: 'UNAUTHORIZED' },
     }));
   });
 
-  it('accepts a valid access token and derives the principal server-side', () => {
+  it('accepts a valid access token and derives the principal server-side', async () => {
     const socket = {
       handshake: { auth: { token: accessToken() } },
       data: {},
     };
     const next = jest.fn();
 
-    socketAuthentication(config)(socket, next);
+    await socketAuthentication(config)(socket, next);
 
     expect(next).toHaveBeenCalledWith();
     expect(socket.data.user).toEqual(expect.objectContaining({

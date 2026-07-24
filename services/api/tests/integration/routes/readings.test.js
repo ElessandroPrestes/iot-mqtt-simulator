@@ -3,7 +3,11 @@ const { createApp }     = require('../../../src/app');
 const readingRepository = require('../../../src/repositories/readingRepository');
 const Reading           = require('../../../src/models/Reading');
 
-jest.mock('../../../src/middleware/authenticate', () => (req, res, next) => next());
+jest.mock('../../../src/middleware/authenticate', () => {
+  const authenticate = (req, res, next) => next();
+  authenticate.createAuthenticate = () => authenticate;
+  return authenticate;
+});
 
 let app;
 
