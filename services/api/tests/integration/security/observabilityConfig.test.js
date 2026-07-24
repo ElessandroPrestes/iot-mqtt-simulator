@@ -32,6 +32,7 @@ describe('protected centralized logging topology', () => {
   const grafanaDatasource = read(
     'infrastructure/grafana/provisioning/datasources/datasource.yml'
   );
+  const ciWorkflow = read('.github/workflows/ci.yml');
 
   it('ships application logs through Alloy to an authenticated mTLS gateway', () => {
     expect(alloyService).toMatch(/user: "473:473"/);
@@ -95,5 +96,18 @@ describe('protected centralized logging topology', () => {
     expect(grafanaDatasource).toMatch(/tlsAuth: true/);
     expect(grafanaDatasource).toMatch(/tlsAuthWithCACert: true/);
     expect(grafanaDatasource).toMatch(/tlsSkipVerify: false/);
+  });
+
+  it('pins the remote probe while runtime consumers keep service DNS', () => {
+    expect(ciWorkflow).toMatch(
+      /docker inspect --format[\s\S]*\.NetworkSettings\.Networks/
+    );
+    expect(ciWorkflow).toContain(
+      '--resolve "loki-gateway:8443:${loki_gateway_ip}"'
+    );
+    expect(ciWorkflow).toMatch(/loki_ready=0[\s\S]*loki_ready=1/);
+    expect(ciWorkflow).toMatch(
+      /api\/datasources\/uid\/\$1\/health/
+    );
   });
 });

@@ -188,21 +188,40 @@ jobs:
         run: |
           curl --fail --silent --insecure https://localhost:8443/ >/dev/null
 
-          for attempt in $(seq 1 60); do
+          loki_gateway_container="$(
+            docker compose -f docker-compose.prod.yml ps -q loki-gateway
+          )"
+          loki_gateway_ip="$(
+            docker inspect --format \
+              '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
+              "$loki_gateway_container"
+          )"
+          test -n "$loki_gateway_ip"
+          loki_ready=0
+          for attempt in $(seq 1 30); do
             if docker compose -f docker-compose.prod.yml exec -T grafana \
               curl --fail --silent --show-error \
+                --resolve "loki-gateway:8443:${loki_gateway_ip}" \
                 --cacert /run/secrets/internal_ca \
                 --cert /run/secrets/grafana_client_cert \
                 --key /run/secrets/grafana_client_key \
                 https://loki-gateway:8443/ready >/dev/null; then
+              loki_ready=1
               break
             fi
-            sleep 5
+            sleep 2
           done
+          if [ "$loki_ready" -ne 1 ]; then
+            docker compose -f docker-compose.prod.yml ps
+            docker compose -f docker-compose.prod.yml logs --tail=100 \
+              loki loki-gateway grafana
+            exit 1
+          fi
 
           for attempt in $(seq 1 30); do
             docker compose -f docker-compose.prod.yml exec -T grafana \
               curl --fail --silent --show-error --get \
+                --resolve "loki-gateway:8443:${loki_gateway_ip}" \
                 --cacert /run/secrets/internal_ca \
                 --cert /run/secrets/grafana_client_cert \
                 --key /run/secrets/grafana_client_key \
@@ -224,6 +243,7 @@ jobs:
 
           if docker compose -f docker-compose.prod.yml exec -T grafana \
             curl --fail --silent --show-error \
+              --resolve "loki-gateway:8443:${loki_gateway_ip}" \
               --cacert /run/secrets/internal_ca \
               https://loki-gateway:8443/ready >/dev/null; then
             echo "Gateway Loki aceitou cliente sem certificado"
