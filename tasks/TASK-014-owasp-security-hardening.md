@@ -300,42 +300,42 @@ risco residual. Isso não equivale a certificação OWASP independente.
 
 ### Bloco A — Documentação verificável
 
-- [ ] Política de senha e palavras contextuais (`V6.1.2`).
-- [ ] Matriz de autorização por rota/operação/campo (`V8.1.2`).
-- [ ] Política e inventário criptográfico (`V11.1.1`, `V11.1.2`,
+- [x] Política de senha e palavras contextuais (`V6.1.2`).
+- [x] Matriz de autorização por rota/operação/campo (`V8.1.2`).
+- [x] Política e inventário criptográfico (`V11.1.1`, `V11.1.2`,
       `V11.2.2`).
-- [ ] Classificação e requisitos de proteção de dados (`V14.1.1`,
+- [x] Classificação e requisitos de proteção de dados (`V14.1.1`,
       `V14.1.2`, `V14.2.4`).
-- [ ] SLA de vulnerabilidades e plano dos advisories moderate (`V15.1.1`,
+- [x] SLA de vulnerabilidades e plano dos advisories moderate (`V15.1.1`,
       `V15.2.1`).
-- [ ] Inventário operacional de logs (`V16.1.1`, `V16.2.3`, `V16.2.4`).
+- [x] Inventário operacional de logs (`V16.1.1`, `V16.2.3`, `V16.2.4`).
 
 ### Bloco B — Autenticação, token e sessão
 
-- [ ] TOTP obrigatório e anti-replay (`V6.3.3`).
-- [ ] Inatividade, concorrência e documentação de sessão (`V7.1.1`,
+- [x] TOTP obrigatório e anti-replay (`V6.3.3`).
+- [x] Inatividade, concorrência e documentação de sessão (`V7.1.1`,
       `V7.1.2`, `V7.3.1`).
-- [ ] Revogação imediata, administrativa e pelo usuário (`V7.4.1`,
+- [x] Revogação imediata, administrativa e pelo usuário (`V7.4.1`,
       `V7.4.5`, `V7.5.2`).
-- [ ] `typ=at+jwt` e finalidade explícita (`V9.2.2`).
-- [ ] Validação de parâmetros Argon2id (`V11.4.2`).
+- [x] `typ=at+jwt` e finalidade explícita (`V9.2.2`).
+- [x] Validação de parâmetros Argon2id (`V11.4.2`).
 
 ### Bloco C — Transporte e identidade backend
 
-- [ ] Cipher suites explícitas e teste (`V12.1.2`).
+- [x] Cipher suites explícitas e teste (`V12.1.2`).
 - [ ] Gate de certificado público do edge (`V12.2.2`).
-- [ ] TLS/CA em todas as conexões internas (`V12.3.1`, `V12.3.2`,
+- [x] TLS/CA em todas as conexões internas (`V12.3.1`, `V12.3.2`,
       `V12.3.3`, `V12.3.4`).
-- [ ] mTLS MQTT e MongoDB X.509 (`V13.2.1`).
-- [ ] Usuário MongoDB de mínimo privilégio (`V13.2.2`).
+- [x] mTLS MQTT e MongoDB X.509 (`V13.2.1`).
+- [x] Usuário MongoDB de mínimo privilégio (`V13.2.2`).
 - [ ] Lifecycle de secrets com fonte de verdade externa (`V13.3.1`).
 
 ### Bloco D — Dados e observabilidade
 
-- [ ] `Cache-Control: no-store` em respostas sensíveis (`V14.3.2`).
-- [ ] Alloy → gateway mTLS → Loki, com Grafana autenticado
+- [x] `Cache-Control: no-store` em respostas sensíveis (`V14.3.2`).
+- [x] Alloy → gateway mTLS → Loki, com Grafana autenticado
       (`V16.4.3`).
-- [ ] Volumes separados, retenção, exclusão desabilitada e aplicação sem
+- [x] Volumes separados, retenção, exclusão desabilitada e aplicação sem
       permissão de alteração (`V16.4.2`).
 
 ### Ordem do novo ciclo
