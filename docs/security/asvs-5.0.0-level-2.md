@@ -1,6 +1,6 @@
 # Baseline OWASP ASVS 5.0.0 Level 2
 
-**Status:** Triagem individual concluída — 34 requisitos aplicáveis em `Fail`
+**Status:** Refactor verificado — 2 requisitos aplicáveis permanecem em `Fail`
 **Data:** 2026-07-24
 **Aprovação humana da baseline:** 2026-07-23
 **Nível-alvo:** Level 2  
@@ -41,62 +41,63 @@ linha para cada requisito Level 1/2 e as colunas obrigatórias `Requirement`,
 | V3 | 16 | 0 | 3 | 19 |
 | V4 | 7 | 0 | 3 | 10 |
 | V5 | 0 | 0 | 9 | 9 |
-| V6 | 10 | 2 | 23 | 35 |
-| V7 | 8 | 6 | 4 | 18 |
-| V8 | 5 | 1 | 1 | 7 |
-| V9 | 6 | 1 | 0 | 7 |
+| V6 | 12 | 0 | 23 | 35 |
+| V7 | 14 | 0 | 4 | 18 |
+| V8 | 6 | 0 | 1 | 7 |
+| V9 | 7 | 0 | 0 | 7 |
 | V10 | 0 | 0 | 29 | 29 |
-| V11 | 6 | 4 | 4 | 14 |
-| V12 | 2 | 6 | 1 | 9 |
-| V13 | 10 | 3 | 0 | 13 |
-| V14 | 5 | 4 | 0 | 9 |
-| V15 | 10 | 2 | 1 | 13 |
-| V16 | 11 | 5 | 0 | 16 |
+| V11 | 10 | 0 | 4 | 14 |
+| V12 | 7 | 1 | 1 | 9 |
+| V13 | 12 | 1 | 0 | 13 |
+| V14 | 9 | 0 | 0 | 9 |
+| V15 | 12 | 0 | 1 | 13 |
+| V16 | 16 | 0 | 0 | 16 |
 | V17 | 0 | 0 | 7 | 7 |
-| **Total** | **118** | **34** | **101** | **253** |
+| **Total** | **150** | **2** | **101** | **253** |
 
 Todos os 101 itens `N/A` foram avaliados por ID. Eles correspondem a mecanismos
 ausentes do produto, como upload de arquivos, OAuth/OIDC e WebRTC; nenhuma
 conexão ou controle existente foi classificado como não aplicável.
 
-## 4. Bloqueios revelados pela triagem
+## 4. Bloqueios restantes
 
-Além dos cinco requisitos inicialmente citados no review, a análise individual
-encontrou lacunas aplicáveis nos seguintes grupos:
+O ciclo aprovado corrigiu 32 dos 34 requisitos originalmente em `Fail`.
+Autenticação e sessão, autorização/token, política criptográfica, TLS interno,
+identidades X.509, classificação de dados, SLA de vulnerabilidades e
+centralização protegida de logs possuem controle, teste e evidência individual
+na matriz CSV.
 
-- autenticação: palavras contextuais de senha e segundo fator;
-- sessão: inatividade, concorrência, invalidação imediata do access token,
-  revogação administrativa e autosserviço de sessões;
-- autorização/token: matriz por campo e tipo/uso explícito do JWT;
-- criptografia: lifecycle/inventário, crypto agility e parâmetros mínimos
-  Argon2id;
-- transporte: cipher suites, certificado público e TLS/CA internos;
-- backend/secrets: identidades de curta duração, MongoDB sem conta root para a
-  API e gestão operacional de secrets;
-- dados: classificação, requisitos por nível e `Cache-Control: no-store`;
-- supply chain: SLA de vulnerabilidades;
-- logs: inventário, processador central, imutabilidade e separação lógica.
+Dois requisitos dependem de um ambiente operacional real e continuam
+bloqueadores, sem exceção ou redução do nível-alvo:
 
-Esses 34 itens permanecem `Fail`. O owner aparece como
-`Pendente decisão humana` porque nenhum risco foi aceito e o Refactor Agent não
-pode atribuir exceções nem reduzir o nível-alvo.
+- `v5.0.0-V12.2.2`: instalar no edge real certificado público confiável e
+  executar o gate de cadeia, hostname, validade, revogação e negociação descrito
+  em `production-certificate-gate.md`;
+- `v5.0.0-V13.3.1`: integrar uma fonte de verdade externa de secrets e
+  evidenciar injeção, rotação, revogação, auditoria e destruição conforme
+  `secrets-lifecycle.md`.
+
+O owner operacional de ambos é `Operação/Plataforma`. Até a produção dessas
+evidências, a TASK permanece em andamento e o review não pode ser aprovado.
 
 ## 5. Evidências operacionais
 
-- API: 149 testes e cobertura acima do gate.
-- Dashboard: 58 testes e build; o teste de WebSocket foi tornado independente
-  da variável `VITE_WS_URL` no commit `1ddf3ee`.
-- Simulator: 24 testes.
-- Stack local: TLS externo, autenticação, ACL e isolamento de portas validados.
-- Trivy/ZAP local: nenhuma vulnerabilidade high/critical nas imagens e nenhum
+- API: 188 testes, 31 suites e cobertura acima do gate.
+- Dashboard: 59 testes e build aprovado.
+- Simulator: 28 testes e cobertura acima do gate.
+- Stack isolada: TLS externo e interno, mTLS, autenticação, ACL, identidades
+  X.509, seis streams de log e isolamento de portas/volumes validados.
+- Trivy/ZAP: nenhuma vulnerabilidade high/critical nas três imagens e nenhum
   alerta high/medium/low no DAST.
 - GitHub Actions: execução
-  [`30087971980`](https://github.com/ElessandroPrestes/iot-mqtt-simulator/actions/runs/30087971980)
-  para CodeQL, Gitleaks, audits, testes, imagens, SBOM e DAST.
+  [`30111549157`](https://github.com/ElessandroPrestes/iot-mqtt-simulator/actions/runs/30111549157)
+  com os dez jobs obrigatórios em `success`: testes/builds/audits, CodeQL,
+  Gitleaks, imagens/SBOM, observabilidade mTLS, ZAP e gate consolidado.
 
-Achados moderate em `uuid` e `echarts`/`vue-echarts` não violam o gate aprovado
-de `high`/`critical`, mas continuam sem SLA até a resolução de
-`v5.0.0-V15.1.1`.
+O advisory moderate da API foi eliminado com a remoção da dependência `uuid`.
+O advisory raiz de `echarts`/`vue-echarts` não viola o gate aprovado de
+`high`/`critical` e possui owner, prazo de 2026-08-23 e plano de upgrade major
+em `vulnerability-management.md`.
 
 ## 6. Gates
 

@@ -7,6 +7,39 @@ function read(name) {
   return fs.readFileSync(path.join(root, 'docs/security', name), 'utf8');
 }
 
+function parseCsvLine(line) {
+  const fields = [];
+  let field = '';
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"' && quoted && line[index + 1] === '"') {
+      field += '"';
+      index += 1;
+    } else if (character === '"') {
+      quoted = !quoted;
+    } else if (character === ',' && !quoted) {
+      fields.push(field);
+      field = '';
+    } else {
+      field += character;
+    }
+  }
+
+  fields.push(field);
+  return fields;
+}
+
+function readMatrix() {
+  const [headerLine, ...lines] = read('asvs-5.0.0-level-2.csv').trim().split('\n');
+  const headers = parseCsvLine(headerLine);
+
+  return lines.map((line) => Object.fromEntries(
+    headers.map((header, index) => [header, parseCsvLine(line)[index]])
+  ));
+}
+
 describe('ASVS Level 2 security documentation', () => {
   it('defines the contextual password denylist and provisioning boundary', () => {
     const policy = read('password-policy.md');
@@ -89,5 +122,29 @@ describe('ASVS Level 2 security documentation', () => {
     expect(secrets).toContain('`V13.3.1` permanece bloqueado');
     expect(certificate).toContain('`V12.2.2` permanece `Fail`');
     expect(certificate).toMatch(/Verify return code: 0/);
+  });
+
+  it('keeps all 253 ASVS rows auditable and only the two external gates failing', () => {
+    const matrix = readMatrix();
+    const states = matrix.reduce((totals, row) => ({
+      ...totals,
+      [row.State]: (totals[row.State] || 0) + 1,
+    }), {});
+    const failures = matrix.filter((row) => row.State === 'Fail');
+
+    expect(matrix).toHaveLength(253);
+    expect(states).toEqual({ Pass: 150, 'N/A': 101, Fail: 2 });
+    expect(failures.map((row) => row.Requirement)).toEqual([
+      'v5.0.0-V12.2.2',
+      'v5.0.0-V13.3.1',
+    ]);
+    for (const row of matrix) {
+      expect(row.Justification).toBeTruthy();
+      expect(row.Control).toBeTruthy();
+      expect(row.Test).toBeTruthy();
+      expect(row.Evidence).toBeTruthy();
+      expect(row.Owner).toBeTruthy();
+    }
+    expect(failures.every((row) => row.Owner === 'Operação/Plataforma')).toBe(true);
   });
 });

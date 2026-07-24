@@ -52,9 +52,13 @@ alvo OWASP ASVS 5.0.0 Level 2 e cobrir adequadamente OWASP Top 10:2025.
 - [x] Testes, audits, Trivy e ZAP executados localmente.
 - [x] Review formal executado.
 - [x] Todos os 253 requisitos ASVS Level 1/2 triados individualmente:
-      118 `Pass`, 101 `N/A` e 34 `Fail`.
+      150 `Pass`, 101 `N/A` e 2 `Fail`.
 - [x] Decisão humana: manter Level 2 e corrigir os 34 `Fail`.
 - [x] ADR-006 e SPEC-006 emendados antes do novo ciclo de código.
+- [x] Gates remotos executados no run `30111549157`; dez jobs obrigatórios
+      passaram.
+- [x] Matriz atualizada individualmente após o refactor: 32 lacunas resolvidas
+      e 2 bloqueios operacionais preservados sem exceção.
 - [ ] Apontamentos do review resolvidos.
 - [ ] Aprovação final do Review Agent e do risco residual.
 
