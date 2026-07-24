@@ -39,7 +39,7 @@ describe('useSocket.js', () => {
 
     expect(io).toHaveBeenCalled();
     expect(io).toHaveBeenCalledWith(
-      undefined,
+      import.meta.env.VITE_WS_URL,
       expect.objectContaining({
         auth: { token: null },
         transports: ['websocket'],
@@ -79,7 +79,7 @@ describe('useSocket.js', () => {
     });
 
     expect(io).toHaveBeenCalledWith(
-      undefined,
+      import.meta.env.VITE_WS_URL,
       expect.objectContaining({ auth: { token: 'memory-token' } })
     );
   });
