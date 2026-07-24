@@ -9,12 +9,17 @@ services:
       - ALL
     cap_add:
       - CHOWN
+      - FOWNER
       - SETGID
       - SETUID
+    entrypoint: ["/bin/sh", "/usr/local/bin/prepare-broker-log.sh"]
+    command: ["/usr/sbin/mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
     volumes:
       - ./services/broker/mosquitto.prod.conf:/mosquitto/config/mosquitto.conf:ro
       - ./services/broker/acl:/mosquitto/config/acl:ro
+      - ./services/broker/prepare-log.sh:/usr/local/bin/prepare-broker-log.sh:ro
       - broker_data:/mosquitto/data
+      - broker_logs:/mosquitto/log
     secrets:
       - internal_ca
       - broker_tls_cert
@@ -40,9 +45,12 @@ services:
     restart: always
     security_opt:
       - no-new-privileges:true
+    entrypoint: ["/bin/sh", "/usr/local/bin/prepare-mongo-log.sh"]
     volumes:
       - mongo_data:/data/db
+      - mongo_logs:/var/log/mongodb
       - ./infrastructure/mongodb/10-create-x509-user.js:/docker-entrypoint-initdb.d/10-create-x509-user.js:ro
+      - ./infrastructure/mongodb/prepare-log.sh:/usr/local/bin/prepare-mongo-log.sh:ro
     environment:
       MONGO_INITDB_DATABASE: iot_dashboard
       MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongodb_root_username
@@ -62,6 +70,9 @@ services:
       - /run/secrets/internal_ca
       - --tlsCertificateKeyFile
       - /run/secrets/mongo_tls_pem
+      - --logpath
+      - /var/log/mongodb/mongod.log
+      - --logappend
     networks:
       - backend
     healthcheck:
@@ -168,6 +179,7 @@ services:
       INTERNAL_CA_FILE: /run/secrets/internal_ca
       SIMULATOR_CLIENT_CERT_FILE: /run/secrets/simulator_client_cert
       SIMULATOR_CLIENT_KEY_FILE: /run/secrets/simulator_client_key
+      LOG_FILE: /var/log/iot-simulator/application.log
       SIMULATOR_INTERVAL_MS: ${SIMULATOR_INTERVAL_MS:-2000}
       SIMULATOR_SENSORS_COUNT: ${SIMULATOR_SENSORS_COUNT:-8}
       SIMULATOR_ANOMALY_PROBABILITY: ${SIMULATOR_ANOMALY_PROBABILITY:-0.05}
@@ -175,6 +187,8 @@ services:
       - internal_ca
       - simulator_client_cert
       - simulator_client_key
+    volumes:
+      - simulator_logs:/var/log/iot-simulator
     tmpfs:
       - /tmp
     depends_on:
@@ -211,6 +225,8 @@ services:
       - internal_ca
       - dashboard_tls_cert
       - dashboard_tls_key
+    volumes:
+      - dashboard_logs:/var/log/iot-dashboard
     networks:
       - frontend
     healthcheck:
@@ -240,6 +256,7 @@ services:
     volumes:
       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./infrastructure/nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - edge_logs:/var/log/iot-edge
     secrets:
       - tls_certificate
       - tls_private_key
@@ -357,6 +374,9 @@ services:
     image: grafana/alloy:v1.18.0@sha256:491b0578c04983fd54fe99b587b6fab4404dc46d0dc16677bd6b00cc1140b308
     restart: always
     user: "473:473"
+    group_add:
+      - "999"
+      - "1883"
     read_only: true
     security_opt:
       - no-new-privileges:true
@@ -365,6 +385,11 @@ services:
     volumes:
       - ./infrastructure/alloy/config.alloy:/etc/alloy/config.alloy:ro
       - api_logs:/var/log/iot-api:ro
+      - simulator_logs:/var/log/iot-simulator:ro
+      - edge_logs:/var/log/iot-edge:ro
+      - dashboard_logs:/var/log/iot-dashboard:ro
+      - broker_logs:/var/log/iot-broker:ro
+      - mongo_logs:/var/log/iot-mongo:ro
       - alloy_data:/var/lib/alloy
     secrets:
       - internal_ca
@@ -500,10 +525,15 @@ volumes:
   alloy_data:
   api_logs:
   broker_data:
+  broker_logs:
+  dashboard_logs:
+  edge_logs:
   grafana_data:
   loki_data:
   mongo_data:
+  mongo_logs:
   prometheus_data:
+  simulator_logs:
 
 networks:
   backend:

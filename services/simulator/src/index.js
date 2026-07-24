@@ -4,6 +4,7 @@ import { TemperatureSensor } from './sensors/temperatureSensor.js';
 import { PressureSensor } from './sensors/pressureSensor.js';
 import { HumiditySensor } from './sensors/humiditySensor.js';
 import { VibrationSensor } from './sensors/vibrationSensor.js';
+import { logger } from './logger.js';
 
 const SENSOR_TYPES = [
   { Cls: TemperatureSensor, topic: config.topics.temperature, prefix: 'TEMP' },
@@ -26,7 +27,7 @@ function buildSensors(count, anomalyProb) {
 }
 
 async function main() {
-  console.log('[Simulator] Connecting to broker...');
+  logger.info('Connecting to MQTT broker');
 
   const client = mqtt.connect(`${config.mqtt.protocol}://${config.mqtt.host}:${config.mqtt.port}`, {
     clientId: config.mqtt.clientId,
@@ -49,7 +50,7 @@ async function main() {
   });
 
   client.on('connect', () => {
-    console.log('[Simulator] Connected. Starting sensor simulation...');
+    logger.info('Connected to MQTT broker');
 
     const sensors = buildSensors(
       config.simulator.sensorsCount,
@@ -62,18 +63,24 @@ async function main() {
         const payload = JSON.stringify(reading);
 
         client.publish(topic, payload, { qos: 1, retain: false }, (err) => {
-          if (err) console.error(`[Simulator] Publish error on ${topic}:`, err.message);
+          if (err) logger.error('MQTT publish failed', { topic, error: err.message });
         });
 
         if (reading.isAnomaly) {
-          console.warn(`[Simulator] ⚠ ANOMALY detected: ${sensor.id} = ${reading.value}${reading.unit}`);
+          logger.warn('Sensor anomaly detected', {
+            sensorId: sensor.id,
+            value: reading.value,
+            unit: reading.unit,
+          });
         }
       });
     }, config.simulator.intervalMs);
   });
 
-  client.on('error', (err) => console.error('[Simulator] MQTT error:', err.message));
-  client.on('reconnect', () => console.log('[Simulator] Reconnecting...'));
+  client.on('error', (err) => logger.error('MQTT connection error', {
+    error: err.message,
+  }));
+  client.on('reconnect', () => logger.info('Reconnecting to MQTT broker'));
 }
 
 main();

@@ -19,6 +19,11 @@ function serviceBlock(compose, service) {
 describe('protected centralized logging topology', () => {
   const compose = read('docker-compose.prod.yml');
   const apiService = serviceBlock(compose, 'api');
+  const simulatorService = serviceBlock(compose, 'simulator');
+  const edgeService = serviceBlock(compose, 'nginx');
+  const dashboardService = serviceBlock(compose, 'dashboard');
+  const brokerService = serviceBlock(compose, 'broker');
+  const mongoService = serviceBlock(compose, 'mongo');
   const alloyService = serviceBlock(compose, 'alloy');
   const lokiService = serviceBlock(compose, 'loki');
   const alloy = read('infrastructure/alloy/config.alloy');
@@ -29,15 +34,37 @@ describe('protected centralized logging topology', () => {
   );
 
   it('ships application logs through Alloy to an authenticated mTLS gateway', () => {
-    expect(apiService).toMatch(/api_logs:\/var\/log\/iot-api/);
     expect(alloyService).toMatch(/user: "473:473"/);
-    expect(alloyService).toMatch(/api_logs:\/var\/log\/iot-api:ro/);
+    expect(alloyService).toMatch(/group_add:\n\s+- "999"\n\s+- "1883"/);
     expect(alloy).toMatch(/loki\.source\.file "application"/);
     expect(alloy).toMatch(/url\s*=\s*"https:\/\/loki-gateway:8443\/loki\/api\/v1\/push"/);
     expect(alloy).toMatch(/ca_file\s*=\s*"\/run\/secrets\/internal_ca"/);
     expect(alloy).toMatch(/cert_file\s*=\s*"\/run\/secrets\/alloy_client_cert"/);
     expect(alloy).toMatch(/key_file\s*=\s*"\/run\/secrets\/alloy_client_key"/);
     expect(alloy).toMatch(/insecure_skip_verify\s*=\s*false/);
+    for (const serviceName of ['api', 'simulator', 'edge', 'dashboard', 'broker', 'mongo']) {
+      expect(alloy).toContain(`"service_name" = "${serviceName}"`);
+    }
+  });
+
+  it.each([
+    ['api', apiService, 'api_logs', '/var/log/iot-api'],
+    ['simulator', simulatorService, 'simulator_logs', '/var/log/iot-simulator'],
+    ['edge', edgeService, 'edge_logs', '/var/log/iot-edge'],
+    ['dashboard', dashboardService, 'dashboard_logs', '/var/log/iot-dashboard'],
+    ['broker', brokerService, 'broker_logs', '/mosquitto/log'],
+    ['mongo', mongoService, 'mongo_logs', '/var/log/mongodb'],
+  ])('gives %s a dedicated log volume collected read-only', (
+    serviceName,
+    producer,
+    volume,
+    producerPath
+  ) => {
+    expect(producer).toContain(`${volume}:${producerPath}`);
+    expect(alloyService).toMatch(
+      new RegExp(`${volume}:\\/var\\/log\\/iot-${serviceName}:ro`)
+    );
+    expect(producer).not.toMatch(/loki_data|observability/);
   });
 
   it('requires mTLS at the gateway and between the gateway and Loki', () => {
@@ -54,7 +81,6 @@ describe('protected centralized logging topology', () => {
   it('isolates immutable central storage and enforces retention without deletion API', () => {
     expect(lokiService).toMatch(/loki_data:\/loki/);
     expect(lokiService).toMatch(/networks:\n\s+- observability/);
-    expect(apiService).not.toMatch(/loki_data|observability/);
     expect(alloyService).not.toMatch(/loki_data/);
     expect(loki).toMatch(/retention_period: 720h/);
     expect(loki).toMatch(/retention_enabled: true/);

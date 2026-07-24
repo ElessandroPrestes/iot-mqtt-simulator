@@ -10,6 +10,31 @@ local.file_match "application" {
       "service_name" = "api",
       "environment" = "production",
     },
+    {
+      "__path__"    = "/var/log/iot-simulator/*.log",
+      "service_name" = "simulator",
+      "environment" = "production",
+    },
+    {
+      "__path__"    = "/var/log/iot-edge/*.log",
+      "service_name" = "edge",
+      "environment" = "production",
+    },
+    {
+      "__path__"    = "/var/log/iot-dashboard/*.log",
+      "service_name" = "dashboard",
+      "environment" = "production",
+    },
+    {
+      "__path__"    = "/var/log/iot-broker/*.log",
+      "service_name" = "broker",
+      "environment" = "production",
+    },
+    {
+      "__path__"    = "/var/log/iot-mongo/*.log",
+      "service_name" = "mongo",
+      "environment" = "production",
+    },
   ]
 }
 
