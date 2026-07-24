@@ -1,0 +1,42 @@
+groups:
+  - name: application-security
+    rules:
+      - alert: AuthenticationBruteForceSuspected
+        expr: sum(increase(security_events_total{event="auth.login",outcome=~"failure|limited"}[5m])) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Volume anormal de falhas de autenticação
+
+      - alert: AuthorizationDenialsHigh
+        expr: sum(increase(security_events_total{event=~"auth.access|auth.authorization|auth.websocket",outcome="denied"}[5m])) > 20
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Volume anormal de negações de acesso
+
+      - alert: HttpRateLimitHigh
+        expr: sum(increase(security_events_total{event="http.rate_limit",outcome="limited"}[5m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Limite global de requisições acionado repetidamente
+
+      - alert: ApiServerErrorsHigh
+        expr: sum(increase(http_request_duration_seconds_count{status_code=~"5.."}[5m])) > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Erros 5xx acima do limite operacional
+
+      - alert: MqttRejectionsHigh
+        expr: sum(increase(mqtt_messages_rejected_total[5m])) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Mensagens MQTT inválidas acima do limite

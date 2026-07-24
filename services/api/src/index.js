@@ -4,16 +4,19 @@ const mongoose = require('mongoose');
 const { createApp } = require('./app');
 const { createSocketServer } = require('./websocket/socketServer');
 const { loadSecurityConfig } = require('./config/security');
+const { loadRuntimeConfig } = require('./config/runtime');
 const mqttService = require('./services/mqttService');
 const logger = require('./utils/logger');
 const { installFatalProcessHandlers } = require('./utils/processLifecycle');
 
 async function bootstrap() {
   const securityConfig = loadSecurityConfig();
+  const runtimeConfig = loadRuntimeConfig();
 
   // MongoDB
-  await mongoose.connect(process.env.MONGODB_URI, {
-    dbName: process.env.MONGODB_DB_NAME,
+  await mongoose.connect(runtimeConfig.mongo.uri, {
+    dbName: runtimeConfig.mongo.dbName,
+    serverSelectionTimeoutMS: 10_000,
   });
   logger.info('MongoDB connected');
 
@@ -25,10 +28,10 @@ async function bootstrap() {
   const io = createSocketServer(server, securityConfig);
 
   // MQTT Processor
-  const mqttClient = mqttService.init(io);
+  const mqttClient = mqttService.init(io, runtimeConfig.mqtt);
 
   // Start
-  const port = process.env.API_PORT || 3000;
+  const port = runtimeConfig.apiPort;
   server.listen(port, () => logger.info(`API listening on :${port}`));
 
   let shuttingDown = false;

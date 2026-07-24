@@ -1,0 +1,8 @@
+user api-processor
+topic read factory/sensors/+/+
+
+user simulator
+topic write factory/sensors/+/+
+
+user healthcheck
+topic write healthcheck

@@ -91,14 +91,21 @@ function parseMqttMessage(topic, payload, now = Date.now()) {
   };
 }
 
-function init(socketIo) {
+function init(socketIo, mqttConfig = {
+  host: process.env.MQTT_BROKER_HOST,
+  port: process.env.MQTT_BROKER_PORT,
+  clientId: process.env.MQTT_CLIENT_ID_API || `api-${Date.now()}`,
+  username: process.env.MQTT_USERNAME,
+  password: process.env.MQTT_PASSWORD,
+}) {
   io = socketIo;
 
-  const client = mqtt.connect(`mqtt://${process.env.MQTT_BROKER_HOST}:${process.env.MQTT_BROKER_PORT}`, {
-    clientId: process.env.MQTT_CLIENT_ID_API || `api-${Date.now()}`,
-    username: process.env.MQTT_USERNAME,
-    password: process.env.MQTT_PASSWORD,
+  const client = mqtt.connect(`mqtt://${mqttConfig.host}:${mqttConfig.port}`, {
+    clientId: mqttConfig.clientId,
+    username: mqttConfig.username,
+    password: mqttConfig.password,
     clean: true,
+    connectTimeout: 10_000,
     reconnectPeriod: 5000,
   });
 

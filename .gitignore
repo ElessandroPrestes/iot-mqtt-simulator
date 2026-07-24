@@ -2,6 +2,8 @@
 .env
 .env.local
 .env.*.local
+.env.production
+secrets/
 
 # Node
 node_modules/
@@ -14,6 +16,7 @@ services/broker/passwd
 *.pem
 *.crt
 *.key
+*.p12
 certs/
 
 # Docker volumes

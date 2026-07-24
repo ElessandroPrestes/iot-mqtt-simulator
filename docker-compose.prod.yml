@@ -1,25 +1,63 @@
 services:
   broker:
-    image: eclipse-mosquitto:2.0
+    image: eclipse-mosquitto:2.0@sha256:212f89e1eaeb2c322d6441b64396e3346026674db8fa9c27beac293405c32b3c
     restart: always
-    ports:
-      - "1883:1883"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
     volumes:
-      - ./services/broker/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
-      - ./services/broker/passwd:/mosquitto/config/passwd:ro
+      - ./services/broker/mosquitto.prod.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./services/broker/acl:/mosquitto/config/acl:ro
       - broker_data:/mosquitto/data
+    secrets:
+      - mosquitto_password_file
+      - mqtt_health_username
+      - mqtt_health_password
+    tmpfs:
+      - /tmp
     networks:
-      - iot_network
+      - backend
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mosquitto_pub -h 127.0.0.1 -u \"$$(cat /run/secrets/mqtt_health_username)\" -P \"$$(cat /run/secrets/mqtt_health_password)\" -t healthcheck -m ping -i healthcheck",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mongo:
-    image: mongo:7.0
+    image: mongo:7.0@sha256:9bdaeb6dac6e7e762e84e2f84103d1f9bb078fa1ba6bde8bb9d2274f655ad173
     restart: always
+    security_opt:
+      - no-new-privileges:true
     volumes:
       - mongo_data:/data/db
     environment:
       MONGO_INITDB_DATABASE: iot_dashboard
+      MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongodb_root_username
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongodb_root_password
+    secrets:
+      - mongodb_root_username
+      - mongodb_root_password
     networks:
-      - iot_network
+      - backend
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --host 127.0.0.1 -u \"$$(cat /run/secrets/mongodb_root_username)\" -p \"$$(cat /run/secrets/mongodb_root_password)\" --authenticationDatabase admin --eval \"db.adminCommand('ping').ok\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   api:
     image: iot-mqtt-simulator-api:prod
@@ -28,14 +66,61 @@ services:
       dockerfile: Dockerfile
       target: production
     restart: always
-    ports:
-      - "3000:3000"
-    env_file: .env
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      NODE_ENV: production
+      API_PORT: 3000
+      MONGODB_URI_FILE: /run/secrets/mongodb_uri
+      MONGODB_DB_NAME: iot_dashboard
+      MQTT_BROKER_HOST: broker
+      MQTT_BROKER_PORT: 1883
+      MQTT_USERNAME_FILE: /run/secrets/mqtt_api_username
+      MQTT_PASSWORD_FILE: /run/secrets/mqtt_api_password
+      MQTT_CLIENT_ID_API: api-processor
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      AUTH_PRINCIPALS_FILE: /run/secrets/auth_principals
+      JWT_ISSUER: iot-mqtt-simulator-api
+      JWT_AUDIENCE: iot-mqtt-simulator-dashboard
+      ACCESS_TOKEN_TTL_SECONDS: 900
+      REFRESH_TOKEN_TTL_SECONDS: 28800
+      LOGIN_RATE_WINDOW_MS: 900000
+      LOGIN_RATE_MAX: 5
+      CORS_ORIGINS: ${PUBLIC_ORIGIN:?PUBLIC_ORIGIN deve ser definido}
+      SWAGGER_ENABLED: "false"
+      LOG_LEVEL: info
+      TEMP_WARN_THRESHOLD: ${TEMP_WARN_THRESHOLD:-70}
+      TEMP_CRITICAL_THRESHOLD: ${TEMP_CRITICAL_THRESHOLD:-90}
+      PRESSURE_WARN_THRESHOLD: ${PRESSURE_WARN_THRESHOLD:-8.5}
+      PRESSURE_CRITICAL_THRESHOLD: ${PRESSURE_CRITICAL_THRESHOLD:-10}
+      HUMIDITY_WARN_THRESHOLD: ${HUMIDITY_WARN_THRESHOLD:-80}
+      HUMIDITY_CRITICAL_THRESHOLD: ${HUMIDITY_CRITICAL_THRESHOLD:-90}
+      VIBRATION_WARN_THRESHOLD: ${VIBRATION_WARN_THRESHOLD:-4.5}
+      VIBRATION_CRITICAL_THRESHOLD: ${VIBRATION_CRITICAL_THRESHOLD:-6}
+    secrets:
+      - mongodb_uri
+      - mqtt_api_username
+      - mqtt_api_password
+      - jwt_secret
+      - auth_principals
+    tmpfs:
+      - /tmp
     depends_on:
-      - broker
-      - mongo
+      broker:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
     networks:
-      - iot_network
+      - backend
+      - frontend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   simulator:
     image: iot-mqtt-simulator-simulator:prod
@@ -43,11 +128,31 @@ services:
       context: ./services/simulator
       dockerfile: Dockerfile
     restart: always
-    env_file: .env
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      NODE_ENV: production
+      MQTT_BROKER_HOST: broker
+      MQTT_BROKER_PORT: 1883
+      MQTT_USERNAME_FILE: /run/secrets/mqtt_simulator_username
+      MQTT_PASSWORD_FILE: /run/secrets/mqtt_simulator_password
+      MQTT_CLIENT_ID_SIM: simulator
+      SIMULATOR_INTERVAL_MS: ${SIMULATOR_INTERVAL_MS:-2000}
+      SIMULATOR_SENSORS_COUNT: ${SIMULATOR_SENSORS_COUNT:-8}
+      SIMULATOR_ANOMALY_PROBABILITY: ${SIMULATOR_ANOMALY_PROBABILITY:-0.05}
+    secrets:
+      - mqtt_simulator_username
+      - mqtt_simulator_password
+    tmpfs:
+      - /tmp
     depends_on:
-      - broker
+      broker:
+        condition: service_healthy
     networks:
-      - iot_network
+      - backend
 
   dashboard:
     image: iot-mqtt-simulator-dashboard:prod
@@ -55,61 +160,162 @@ services:
       context: ./services/dashboard
       dockerfile: Dockerfile
       target: production
+      args:
+        VITE_API_URL: /api/v1
+        VITE_WS_URL: ""
     restart: always
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - NET_BIND_SERVICE
+      - SETGID
+      - SETUID
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
     networks:
-      - iot_network
+      - frontend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   nginx:
-    image: nginx:alpine
+    image: nginx:alpine@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752
     restart: always
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - NET_BIND_SERVICE
+      - SETGID
+      - SETUID
     ports:
-      - "${NGINX_PORT:-8080}:80"
-      - "${NGINX_SSL_PORT:-8443}:443"
+      - "${NGINX_HTTP_PORT:-8080}:80"
+      - "${NGINX_HTTPS_PORT:-8443}:443"
+    environment:
+      NGINX_HTTPS_PORT: ${NGINX_HTTPS_PORT:-8443}
     volumes:
       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./infrastructure/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infrastructure/nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    secrets:
+      - tls_certificate
+      - tls_private_key
+    tmpfs:
+      - /var/cache/nginx
+      - /etc/nginx/conf.d
+      - /var/run
+      - /tmp
     depends_on:
-      - api
-      - dashboard
+      api:
+        condition: service_healthy
+      dashboard:
+        condition: service_healthy
     networks:
-      - iot_network
+      - frontend
+    healthcheck:
+      test: ["CMD", "wget", "--no-check-certificate", "-qO-", "https://127.0.0.1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   prometheus:
-    image: prom/prometheus:v2.53.1
+    image: prom/prometheus:v2.53.1@sha256:f20d3127bf2876f4a1df76246fca576b41ddf1125ed1c546fbd8b16ea55117e6
     restart: always
-    ports:
-      - "9091:9090"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infrastructure/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    tmpfs:
+      - /tmp
     networks:
-      - iot_network
+      - backend
+      - observability
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
   grafana:
-    image: grafana/grafana-oss:11.1.0
+    image: grafana/grafana-oss:11.1.0@sha256:079600c9517b678c10cda6006b4487d3174512fd4c6cface37df7822756ed7a5
     restart: always
-    ports:
-      - "3001:3000"
+    security_opt:
+      - no-new-privileges:true
     volumes:
       - grafana_data:/var/lib/grafana
       - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./infrastructure/grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    secrets:
+      - grafana_admin_password
     networks:
-      - iot_network
+      - observability
     depends_on:
       - prometheus
 
+secrets:
+  auth_principals:
+    file: ${SECRETS_DIR:-./secrets}/auth_principals.json
+  grafana_admin_password:
+    file: ${SECRETS_DIR:-./secrets}/grafana_admin_password
+  jwt_secret:
+    file: ${SECRETS_DIR:-./secrets}/jwt_secret
+  mongodb_root_password:
+    file: ${SECRETS_DIR:-./secrets}/mongodb_root_password
+  mongodb_root_username:
+    file: ${SECRETS_DIR:-./secrets}/mongodb_root_username
+  mongodb_uri:
+    file: ${SECRETS_DIR:-./secrets}/mongodb_uri
+  mosquitto_password_file:
+    file: ${SECRETS_DIR:-./secrets}/mosquitto_password_file
+  mqtt_api_password:
+    file: ${SECRETS_DIR:-./secrets}/mqtt_api_password
+  mqtt_api_username:
+    file: ${SECRETS_DIR:-./secrets}/mqtt_api_username
+  mqtt_health_password:
+    file: ${SECRETS_DIR:-./secrets}/mqtt_health_password
+  mqtt_health_username:
+    file: ${SECRETS_DIR:-./secrets}/mqtt_health_username
+  mqtt_simulator_password:
+    file: ${SECRETS_DIR:-./secrets}/mqtt_simulator_password
+  mqtt_simulator_username:
+    file: ${SECRETS_DIR:-./secrets}/mqtt_simulator_username
+  tls_certificate:
+    file: ${SECRETS_DIR:-./secrets}/tls_certificate.crt
+  tls_private_key:
+    file: ${SECRETS_DIR:-./secrets}/tls_private_key.key
+
 volumes:
   broker_data:
+  grafana_data:
   mongo_data:
   prometheus_data:
-  grafana_data:
 
 networks:
-  iot_network:
+  backend:
     driver: bridge
+    internal: true
+  frontend:
+    driver: bridge
+  observability:
+    driver: bridge
+    internal: true
