@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const request = require('supertest');
 const { createApp } = require('../../../src/app');
 const { generateTotp } = require('../../../src/utils/totp');
+const AuthenticationState = require('../../../src/models/AuthenticationState');
 const Session = require('../../../src/models/Session');
 
 const BROWSER_HEADERS = {
@@ -308,6 +309,7 @@ describe('Auth Routes (Integration)', () => {
     const limitedApp = createApp({
       securityConfig: {
         ...securityConfig,
+        loginMaxAttempts: 20,
         maxConcurrentSessions: 1,
       },
     });
@@ -316,20 +318,73 @@ describe('Auth Routes (Integration)', () => {
       password: 'correct horse battery staple',
     };
 
-    const responses = await Promise.all([
-      request(limitedApp)
+    const login = () => request(limitedApp)
         .post('/api/v1/auth/login')
         .set(BROWSER_HEADERS)
-        .send(credentials),
-      request(limitedApp)
-        .post('/api/v1/auth/login')
-        .set(BROWSER_HEADERS)
-        .send(credentials),
-    ]);
+        .send(credentials);
+    const responses = await Promise.all(
+      Array.from({ length: 8 }, () => login())
+    );
+    const statuses = responses.map(({ status }) => status);
 
-    expect(responses.map(({ status }) => status).sort()).toEqual([200, 409]);
-    expect(responses.find(({ status }) => status === 409).body.error.code)
-      .toBe('SESSION_LIMIT');
+    expect(statuses.filter((status) => status === 200)).toHaveLength(1);
+    expect(statuses.filter((status) => status === 409)).toHaveLength(7);
+    responses
+      .filter(({ status }) => status === 409)
+      .forEach(({ body }) => {
+        expect(body.error.code).toBe('SESSION_LIMIT');
+      });
+  });
+
+  it('releases session admission after persistence failure', async () => {
+    const create = jest.spyOn(Session, 'create');
+    create.mockRejectedValueOnce(new Error('session persistence failed'));
+
+    const credentials = {
+      username: 'operator',
+      password: 'correct horse battery staple',
+    };
+    const failed = await request(app)
+      .post('/api/v1/auth/login')
+      .set(BROWSER_HEADERS)
+      .send(credentials);
+    const stateAfterFailure = await AuthenticationState.findOne({
+      principalId: 'operator-1',
+    }).lean();
+    const recovered = await request(app)
+      .post('/api/v1/auth/login')
+      .set(BROWSER_HEADERS)
+      .send(credentials);
+    create.mockRestore();
+
+    expect(failed.status).toBe(500);
+    expect(stateAfterFailure).not.toHaveProperty('sessionLockId');
+    expect(stateAfterFailure).not.toHaveProperty('sessionLockUntil');
+    expect(recovered.status).toBe(200);
+  });
+
+  it('recovers an expired session admission lease', async () => {
+    await AuthenticationState.create({
+      principalId: 'operator-1',
+      lastTotpCounter: -1,
+      sessionLockId: 'orphaned-owner',
+      sessionLockUntil: new Date(Date.now() - 1_000),
+    });
+
+    const recovered = await request(app)
+      .post('/api/v1/auth/login')
+      .set(BROWSER_HEADERS)
+      .send({
+        username: 'operator',
+        password: 'correct horse battery staple',
+      });
+    const state = await AuthenticationState.findOne({
+      principalId: 'operator-1',
+    }).lean();
+
+    expect(recovered.status).toBe(200);
+    expect(state).not.toHaveProperty('sessionLockId');
+    expect(state).not.toHaveProperty('sessionLockUntil');
   });
 
   it('allows only a security admin to revoke another principal session', async () => {

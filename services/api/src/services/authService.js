@@ -5,6 +5,10 @@ const Session = require('../models/Session');
 const AuthenticationState = require('../models/AuthenticationState');
 const { verifyTotp } = require('../utils/totp');
 
+const SESSION_LOCK_LEASE_MS = 30_000;
+const SESSION_LOCK_RETRY_MS = 20;
+const SESSION_LOCK_MAX_ATTEMPTS = 500;
+
 const dummyHashPromise = argon2.hash(crypto.randomBytes(32), {
   type: argon2.argon2id,
 });
@@ -33,6 +37,69 @@ function sessionLimitExceeded() {
   error.status = 409;
   error.code = 'SESSION_LIMIT';
   return error;
+}
+
+function sessionAdmissionBusy() {
+  const error = new Error('Session admission is temporarily busy');
+  error.status = 503;
+  error.code = 'SESSION_BUSY';
+  return error;
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+
+async function ensureAuthenticationState(principalId) {
+  try {
+    await AuthenticationState.updateOne(
+      { principalId },
+      { $setOnInsert: { lastTotpCounter: -1 } },
+      { upsert: true }
+    );
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+  }
+}
+
+async function acquireSessionAdmission(principalId) {
+  await ensureAuthenticationState(principalId);
+  const lockId = crypto.randomUUID();
+
+  for (let attempt = 0; attempt < SESSION_LOCK_MAX_ATTEMPTS; attempt += 1) {
+    const now = new Date();
+    const state = await AuthenticationState.findOneAndUpdate(
+      {
+        principalId,
+        $or: [
+          { sessionLockUntil: { $exists: false } },
+          { sessionLockUntil: null },
+          { sessionLockUntil: { $lte: now } },
+        ],
+      },
+      {
+        $set: {
+          sessionLockId: lockId,
+          sessionLockUntil: new Date(now.getTime() + SESSION_LOCK_LEASE_MS),
+        },
+      },
+      { new: true }
+    );
+
+    if (state?.sessionLockId === lockId) return lockId;
+    await wait(SESSION_LOCK_RETRY_MS);
+  }
+
+  throw sessionAdmissionBusy();
+}
+
+async function releaseSessionAdmission(principalId, lockId) {
+  await AuthenticationState.updateOne(
+    { principalId, sessionLockId: lockId },
+    { $unset: { sessionLockId: '', sessionLockUntil: '' } }
+  );
 }
 
 async function claimTotpCounter(principalId, counter) {
@@ -106,38 +173,43 @@ function createOpaqueToken() {
 }
 
 async function createSession(principal, config, familyId = crypto.randomUUID()) {
-  const now = new Date();
-  const activeFamilies = await Session.distinct('familyId', {
-    principalId: principal.id,
-    revokedAt: null,
-    expiresAt: { $gt: now },
-    lastActivityAt: {
-      $gt: new Date(now.getTime() - config.sessionIdleTtlSeconds * 1000),
-    },
-  });
-  if (!activeFamilies.includes(familyId)
-    && activeFamilies.length >= config.maxConcurrentSessions) {
-    throw sessionLimitExceeded();
+  const lockId = await acquireSessionAdmission(principal.id);
+  try {
+    const now = new Date();
+    const activeFamilies = await Session.distinct('familyId', {
+      principalId: principal.id,
+      revokedAt: null,
+      expiresAt: { $gt: now },
+      lastActivityAt: {
+        $gt: new Date(now.getTime() - config.sessionIdleTtlSeconds * 1000),
+      },
+    });
+    if (!activeFamilies.includes(familyId)
+      && activeFamilies.length >= config.maxConcurrentSessions) {
+      throw sessionLimitExceeded();
+    }
+
+    const refreshToken = createOpaqueToken();
+    const expiresAt = new Date(now.getTime() + config.refreshTokenTtlSeconds * 1000);
+
+    await Session.create({
+      tokenHash: hashToken(refreshToken),
+      familyId,
+      principalId: principal.id,
+      role: principal.role,
+      expiresAt,
+      lastActivityAt: now,
+    });
+
+    return {
+      accessToken: issueAccessToken(principal, familyId, config),
+      refreshToken,
+      expiresAt,
+      principal,
+    };
+  } finally {
+    await releaseSessionAdmission(principal.id, lockId);
   }
-
-  const refreshToken = createOpaqueToken();
-  const expiresAt = new Date(now.getTime() + config.refreshTokenTtlSeconds * 1000);
-
-  await Session.create({
-    tokenHash: hashToken(refreshToken),
-    familyId,
-    principalId: principal.id,
-    role: principal.role,
-    expiresAt,
-    lastActivityAt: now,
-  });
-
-  return {
-    accessToken: issueAccessToken(principal, familyId, config),
-    refreshToken,
-    expiresAt,
-    principal,
-  };
 }
 
 function principalFromConfig(principalId, role, config) {

@@ -19,6 +19,14 @@ updates:
       dashboard-security-updates:
         applies-to: security-updates
         patterns: ["*"]
+      dashboard-toolchain:
+        applies-to: version-updates
+        dependency-type: development
+        patterns:
+          - vite
+          - "@vitejs/plugin-vue"
+          - vitest
+          - "@vitest/*"
 
   - package-ecosystem: npm
     directory: /services/simulator

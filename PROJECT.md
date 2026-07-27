@@ -14,7 +14,7 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 - Expõe API REST + WebSocket para consumo pelo dashboard
 - Exibe dados em tempo real via dashboard Vue.js com gráficos ECharts
 
-**Status:** Concluído e aprovado no escopo exclusivamente local
+**Status:** Correção CI/CD da TASK-015 validada localmente; aguardando gate remoto
 **Versão:** 1.0.0  
 **SDD-Ready:** Sim (bootstrapado em 2026-07-22)
 
@@ -131,7 +131,8 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 | clsx | ^2.1.1 | Classes CSS condicionais |
 | tailwindcss | ^3.4.4 | CSS utility-first |
 
-**Dev:** vite ^5.3, @vitejs/plugin-vue ^5, vitest ^1.6, @vue/test-utils ^2.4, jsdom ^24, @pinia/testing ^0.1
+**Dev:** vite 8.1.5, @vitejs/plugin-vue 6.0.8, vitest 4.1.10,
+@vue/test-utils ^2.4, jsdom ^24, @pinia/testing ^0.1
 
 ---
 
@@ -205,7 +206,7 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 
 ## 6. Ambiente de Execução
 
-**Runtime:** Node.js (versão não fixada — recomendado >=20 LTS)  
+**Runtime:** Node.js 22 LTS (`>=22.12`) ou 24+
 **Package Manager:** npm  
 **Container Runtime:** Docker + Docker Compose  
 
@@ -400,6 +401,11 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 
 > Jobs `api`, `simulator` e `dashboard` rodam em **paralelo**.  
 > O job `ci-ok` só passa se todos os anteriores tiverem sucesso.
+
+O toolchain do Dashboard é atualizado como conjunto compatível pelo Dependabot.
+A admissão de sessões usa lock MongoDB com lease para que testes e runtime
+respeitem `maxConcurrentSessions` mesmo sob requisições paralelas
+([ADR-007](adr/ADR-007-ci-determinism-session-admission.md)).
 
 ### Execução local
 
