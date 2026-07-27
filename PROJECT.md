@@ -14,7 +14,7 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 - Expõe API REST + WebSocket para consumo pelo dashboard
 - Exibe dados em tempo real via dashboard Vue.js com gráficos ECharts
 
-**Status:** Correção CI/CD da TASK-015 validada localmente; aguardando gate remoto
+**Status:** Concluído e aprovado no escopo local; CI/CD verde na `main`
 **Versão:** 1.0.0  
 **SDD-Ready:** Sim (bootstrapado em 2026-07-22)
 

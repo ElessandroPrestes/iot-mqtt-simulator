@@ -2,7 +2,7 @@
 
 ## Status
 
-🟢 **Aprovada para implementação na `main`**
+🟢 **Concluída e aprovada na `main`**
 
 **Aprovação humana:** 2026-07-27
 
@@ -57,7 +57,7 @@ CI da `main`, sem reduzir gates de teste, segurança ou integridade.
 - [x] Testes do Simulator passam.
 - [x] Imagem do Dashboard constrói com `npm ci`.
 - [x] Configuração Dependabot agrupa o toolchain.
-- [ ] CI remoto do commit na `main` termina verde.
+- [x] CI remoto do commit na `main` termina verde.
 
 ## 5. Referências
 

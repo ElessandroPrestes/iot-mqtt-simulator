@@ -333,4 +333,4 @@
 | 2026-07-23 | TASK-012 | ✅ README.md finalizado com infos de arquitetura, docs de testes e criação do CONTRIBUTING.md |
 | 2026-07-27 | TASK-011 | ✅ OpenAPI completo e Swagger validado em HTTPS no lifecycle local |
 | 2026-07-27 | TASK-014 | ✅ Hardening ASVS Level 2 aprovado no escopo exclusivamente local |
-| 2026-07-27 | TASK-015 | 🟡 Corrida de sessões e toolchain Dashboard corrigidos; gate remoto pendente |
+| 2026-07-27 | TASK-015 | ✅ Corrida de sessões e toolchain Dashboard corrigidos; CI remoto verde |

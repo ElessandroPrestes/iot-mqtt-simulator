@@ -8,7 +8,7 @@
 
 ## Status
 
-🟡 **Approved for push — gate remoto pendente**
+🟢 **Aprovado**
 
 ## Diagnóstico confirmado
 
@@ -38,9 +38,12 @@
 - Imagens `api:production` e `dashboard:production` construídas.
 - `npm audit --omit=dev --audit-level=high` sem vulnerabilidade bloqueante.
 - `dependabot.yml` parseado com sucesso.
+- Workflow oficial
+  [`CI — Qualidade e Segurança` #64](https://github.com/ElessandroPrestes/iot-mqtt-simulator/actions/runs/30275514153)
+  aprovado no commit `29bb81c`, com os dez jobs concluídos com sucesso.
 
 ## Decisão
 
-A alteração está aprovada para commit e push na `main`. O review só será
-marcado final após o workflow remoto concluir com sucesso. Nenhum deploy da
-aplicação foi autorizado ou realizado.
+A alteração está aprovada na `main`. Todos os critérios da SPEC-007 foram
+atendidos local e remotamente. Nenhum deploy da aplicação foi autorizado ou
+realizado.

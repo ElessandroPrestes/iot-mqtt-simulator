@@ -2,7 +2,7 @@
 
 ## Status
 
-🟡 **Em implementação**
+🟢 **Concluída**
 
 ## Fase
 
@@ -30,5 +30,5 @@ Correção crítica de CI/CD
 - [x] Dashboard instala, testa e constrói sem bypass de peer dependency.
 - [x] CI local completo passa.
 - [x] Review SDD aprovado para envio.
-- [ ] Commit enviado à `main`.
-- [ ] CI remoto verde.
+- [x] Commit enviado à `main`.
+- [x] CI remoto verde.
