@@ -31,7 +31,7 @@
     "@tailwindcss/typography": "^0.5.13",
     "vitest": "^1.6.0",
     "@vitest/coverage-v8": "^1.6.0",
-    "@vitest/ui": "^1.6.0",
+    "@vitest/ui": "^4.1.10",
     "@vue/test-utils": "^2.4.6",
     "jsdom": "^24.1.0",
     "@pinia/testing": "^0.1.3"
