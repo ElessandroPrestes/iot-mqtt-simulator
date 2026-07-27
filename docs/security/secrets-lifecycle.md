@@ -1,27 +1,44 @@
 # Runbook de lifecycle de secrets
 
-**Status:** controle obrigatório; evidência do gestor externo pendente no deploy real
+**Status:** controle atendido no escopo local; gestor externo fora de escopo
 **Owner:** Maintainer do projeto
 **Referências:** `ADR-006`, ASVS `V13.3.1`
 
 ## Limite de responsabilidade
 
-A fonte de verdade de produção deve ser um gestor aprovado, como Vault ou
-serviço gerenciado equivalente definido pela organização. `SECRETS_DIR` e
-Docker Compose são somente o mecanismo final de entrega por arquivo. O
-repositório, a imagem, variáveis inline, tickets e diretórios permanentes no host
-não são fontes de verdade.
+O ambiente alvo aprovado em 2026-07-27 é exclusivamente local. Sua solução de
+gestão é o lifecycle efêmero automatizado por
+`scripts/local/secure-stack.sh` e `scripts/ci/prepare-dast-secrets.sh`.
+`SECRETS_DIR` e Docker Compose são o mecanismo final de entrega por arquivo. O
+repositório, imagens, variáveis inline e diretórios permanentes não são fontes
+de verdade.
 
-O deploy real não pode avançar enquanto a mudança não registrar:
+O fluxo local deve:
 
-- produto/namespace do gestor escolhido;
-- owner e aprovador;
-- identificadores e versões dos secrets, sem seus valores;
-- política de acesso do executor;
-- datas de criação, rotação e expiração;
-- evidência de destruição das cópias temporárias.
+- gerar material novo a cada lifecycle;
+- armazená-lo fora do Git em diretório temporário `0700`;
+- montar somente os arquivos necessários em cada workload;
+- expor credenciais humanas apenas por comando local explícito;
+- destruir arquivos e volumes efêmeros no teardown.
 
-Sem essa evidência, `V13.3.1` permanece bloqueado mesmo que o Compose funcione.
+Um futuro deploy remoto deve substituir esse lifecycle por Vault ou serviço
+gerenciado equivalente e registrar namespace, política IAM, versões, auditoria,
+rotação e destruição. Essa infraestrutura externa não pertence à entrega local.
+
+## Operação local
+
+```bash
+make local-secure-up
+make local-credentials
+make local-secure-status
+make local-secure-down
+```
+
+`local-secure-up` usa `mktemp`, restringe o diretório, gera credenciais e
+certificados de curta duração e inicia o perfil seguro. `local-secure-down`
+avisa e remove containers, volumes, secrets e o ponteiro local. A remoção dos
+volumes é intencional: credenciais MongoDB e identidades X.509 são efêmeras e
+não podem sobreviver ao material que as autentica.
 
 ## Inventário
 
@@ -66,9 +83,9 @@ no diretório de entrega de produção.
 6. Remover os arquivos temporários quando o runtime/orquestrador não depender
    mais deles; em Docker Compose local, removê-los após o teardown.
 
-O script `prepare-dast-secrets.sh` implementa somente CI efêmero: validade de um
-dia, dados sintéticos e destruição no `if: always()`. Ele não é gestor de
-produção.
+O script `prepare-dast-secrets.sh` implementa o provisionamento efêmero comum ao
+CI e à execução local: validade de um dia e dados sintéticos. O wrapper local e
+o bloco `if: always()` do CI implementam a destruição.
 
 ## Rotação
 
@@ -135,7 +152,6 @@ Checklist mínimo de evidência:
 
 ## Gate
 
-Este runbook documenta o processo, mas não declara que um gestor específico
-está operante. O Review Agent só pode converter `V13.3.1` para `Pass` após
-evidência real da fonte externa e de pelo menos um ciclo criação→entrega→rotação
-ou revogação→destruição.
+No escopo exclusivamente local, `V13.3.1` é `Pass` após teste estrutural dos
+scripts e um ciclo reproduzível criação→entrega→execução→destruição. Um futuro
+deploy remoto reabre o gate e exige evidência de um gestor externo aprovado.

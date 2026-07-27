@@ -1,9 +1,9 @@
 # ADR-006: Autenticação, sessão, autorização, secrets e transporte seguro
 
-**Status:** Aceito — emendado para ASVS 5.0.0 Level 2 integral
+**Status:** Aceito — emendado para ASVS 5.0.0 Level 2 no escopo local
 **Data:** 2026-07-23
-**Emenda:** 2026-07-24
-**Aprovação humana:** 2026-07-23 e 2026-07-24
+**Emendas:** 2026-07-24 e 2026-07-27
+**Aprovação humana:** 2026-07-23, 2026-07-24 e 2026-07-27
 **SPEC:** [SPEC-006](../specs/SPEC-006-owasp-security-hardening.md)
 **TASK:** [TASK-014](../tasks/TASK-014-owasp-security-hardening.md)
 
@@ -345,6 +345,63 @@ Esta emenda substitui as decisões anteriores que aceitavam:
 - [x] Ampliação de escopo para MFA, sessões administráveis, TLS/mTLS interno,
       identidade de workloads e logs centralizados aprovada.
 - [x] Exceções permanentes rejeitadas.
-- [ ] Testes de segurança adicionados antes da implementação.
-- [ ] Todos os 34 itens aplicáveis convertidos para `Pass`.
-- [ ] Evidência de certificado público anexada para o deploy real.
+- [x] Testes de segurança adicionados antes da implementação.
+- [x] Trinta e dois dos 34 itens aplicáveis convertidos para `Pass`.
+- [x] Escopo operacional final e os dois itens dependentes de deploy real
+      reavaliados pela emenda de 2026-07-27.
+
+## Emenda de 2026-07-27 — execução exclusivamente local
+
+### Motivação e decisão humana
+
+Em 2026-07-27, o responsável humano decidiu explicitamente que o projeto deve
+ser executado somente na estação local e que não haverá deploy público. Esta
+emenda reduz o limite operacional da entrega, sem remover controles de
+aplicação, autenticação, autorização, TLS/mTLS interno, observabilidade ou
+supply chain já implementados.
+
+O perfil seguro continua usando `NODE_ENV=production` para exercitar fail
+closed, MFA, identidades X.509 e isolamento de redes, mas essa denominação de
+configuração não transforma a execução em um ambiente público ou em produção
+organizacional.
+
+### 15. Limite de confiança local
+
+- O único edge acessível pelo host usa loopback em
+  `https://localhost:8443`.
+- Não há DNS público, ingress externo, ambiente remoto, usuário remoto ou
+  publicação de portas internas.
+- Certificados do edge e dos workloads são emitidos por uma CA efêmera local e
+  destruídos no encerramento da stack.
+- Um futuro deploy público exigirá novo ciclo
+  Architecture → Specification → Human Approval e reativará os gates de
+  certificado público e operação remota.
+
+### 16. Reclassificação ASVS
+
+- `V12.2.2` passa a `N/A`: o requisito exige certificado publicamente
+  confiável para serviço voltado ao exterior, e não existe serviço desse tipo
+  no escopo aprovado. TLS 1.2/1.3, validação da CA local e hostname continuam
+  cobertos por `V12.1.*` e `V12.3.*`.
+- `V13.3.1` permanece aplicável. Para o escopo local, será atendido por uma
+  solução automatizada de lifecycle efêmero que:
+  - cria secrets aleatórios e identidades X.509 fora do Git;
+  - armazena o material em diretório temporário com acesso restrito;
+  - entrega somente os arquivos necessários via Docker secrets;
+  - mantém os valores fora do source e dos artefatos de build;
+  - destrói credenciais, chaves e certificados no teardown.
+- Vault ou serviço gerenciado externo deixa de ser requisito desta entrega,
+  pois não existe ambiente operacional externo. Continua sendo obrigatório em
+  qualquer futura especificação de deploy real.
+
+### Gate desta emenda
+
+- [x] Execução exclusivamente local aprovada por humano.
+- [x] Deploy público e release operacional removidos do escopo.
+- [x] Reclassificação de `V12.2.2` para `N/A` aprovada pelo novo limite de
+      confiança.
+- [x] Lifecycle local efêmero aceito como estratégia para `V13.3.1`.
+- [x] Automação local de criação, uso e destruição de secrets implementada e
+      testada.
+- [x] Matriz ASVS e TASK sincronizadas com esta decisão.
+- [ ] Novo parecer do Review Agent emitido.

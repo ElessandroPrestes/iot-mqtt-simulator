@@ -2,16 +2,14 @@
 
 ## Status
 
-🟠 **Em andamento — review com 2 gates operacionais pendentes**
+🟠 **Em andamento — refactor do escopo local em validação**
 
-A SPEC-006 foi aprovada por humano em 2026-07-23. Esta TASK deve ser concluída
-antes de qualquer release v1.0.0. Os controles de aplicação e infraestrutura
-foram implementados e testados. A nova revisão de 2026-07-24 resolveu os cinco
-apontamentos anteriores e permanece como `Changes Requested` exclusivamente por
-`V12.2.2` (certificado público do edge real) e `V13.3.1` (fonte de verdade
-externa para secrets). A TASK-013 continua bloqueada.
-Em 2026-07-24, a decisão humana foi manter o alvo Level 2 e eliminar os 34
-`Fail`; a emenda do ADR-006/SPEC-006 foi autorizada sem exceções permanentes.
+A SPEC-006 foi aprovada por humano em 2026-07-23. Em 2026-07-27, o responsável
+humano decidiu que a entrega será exclusivamente local, sem deploy público.
+ADR-006 e SPEC-006 foram emendados antes do novo código: `V12.2.2` é `N/A`
+porque não existe serviço external-facing; `V13.3.1` permanece aplicável e será
+atendido por lifecycle local efêmero e automatizado. A TASK-013 continua fora
+do escopo.
 
 ## Fase
 
@@ -62,7 +60,14 @@ alvo OWASP ASVS 5.0.0 Level 2 e cobrir adequadamente OWASP Top 10:2025.
       e 2 bloqueios operacionais preservados sem exceção.
 - [x] Novo Review Agent executado no commit `c28464b`: cinco apontamentos
       anteriores resolvidos e dois P0 externos registrados.
-- [ ] Apontamentos do review resolvidos.
+- [x] Decisão humana de execução exclusivamente local registrada.
+- [x] ADR-006 e SPEC-006 emendados para o novo limite de confiança.
+- [x] Lifecycle local efêmero implementado.
+- [x] Lifecycle criação→execução→destruição→recriação validado localmente.
+- [x] Stack reiniciada com novos secrets e mantida saudável em
+      `https://localhost:8443`.
+- [x] Matriz final: 151 `Pass`, 102 `N/A` e zero `Fail`.
+- [x] Apontamentos do review resolvidos pelo novo escopo aprovado.
 - [ ] Aprovação final do Review Agent e do risco residual.
 
 ## 1. Artefatos e modificações necessárias
@@ -259,7 +264,7 @@ Não misturar release, changelog ou tag nesses commits.
 - [x] Threat model e abuse cases foram aprovados.
 - [x] ADR-006 foi aprovado.
 - [x] Rate limits específicos foram testados.
-- [ ] Riscos residuais têm owner e justificativa.
+- [x] Riscos residuais têm owner e justificativa.
 
 ### A07 — Authentication Failures
 
@@ -274,7 +279,7 @@ Não misturar release, changelog ou tag nesses commits.
 
 - [x] Eventos de segurança possuem correlation ID.
 - [x] Logs não contêm tokens, cookies, senhas ou secrets.
-- [ ] Alertas de brute force, `401/403/429`, `5xx` e rejeição MQTT disparam em
+- [x] Alertas de brute force, `401/403/429`, `5xx` e rejeição MQTT disparam em
       teste.
 - [x] Labels Prometheus possuem cardinalidade limitada.
 
@@ -291,7 +296,7 @@ Não misturar release, changelog ou tag nesses commits.
 - [x] Cobertura mínima do projeto é mantida.
 - [x] DAST baseline não apresenta alerta `high`.
 - [x] Matriz ASVS contém uma linha auditável para cada um dos 253 requisitos.
-- [ ] Matriz ASVS 5.0.0 Level 2 não possui item aplicável em `Fail`.
+- [x] Matriz ASVS 5.0.0 Level 2 não possui item aplicável em `Fail`.
 - [ ] Review Agent: `Approved`.
 - [ ] `PROJECT.md`, README, OpenAPI e runbooks refletem o estado testado.
 - [x] Nenhuma alteração de `CHANGELOG.md`, tag `v1.0.0` ou merge de release foi
@@ -330,12 +335,14 @@ risco residual. Isso não equivale a certificação OWASP independente.
 ### Bloco C — Transporte e identidade backend
 
 - [x] Cipher suites explícitas e teste (`V12.1.2`).
-- [ ] Gate de certificado público do edge (`V12.2.2`).
+- [x] Certificado público do edge classificado como `N/A`, pois não existe
+      serviço external-facing no escopo (`V12.2.2`).
 - [x] TLS/CA em todas as conexões internas (`V12.3.1`, `V12.3.2`,
       `V12.3.3`, `V12.3.4`).
 - [x] mTLS MQTT e MongoDB X.509 (`V13.2.1`).
 - [x] Usuário MongoDB de mínimo privilégio (`V13.2.2`).
-- [ ] Lifecycle de secrets com fonte de verdade externa (`V13.3.1`).
+- [x] Lifecycle local cria, restringe, entrega e destrói secrets efêmeros
+      (`V13.3.1`).
 
 ### Bloco D — Dados e observabilidade
 

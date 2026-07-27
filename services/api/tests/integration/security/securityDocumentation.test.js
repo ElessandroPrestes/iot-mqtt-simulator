@@ -114,30 +114,43 @@ describe('ASVS Level 2 security documentation', () => {
     expect(inventory).toMatch(/somente para\s+leitura/);
   });
 
-  it('keeps external secret management and public certificate as honest deploy gates', () => {
+  it('documents the local trust boundary and ephemeral secret lifecycle', () => {
     const secrets = read('secrets-lifecycle.md');
     const certificate = read('production-certificate-gate.md');
+    const localLifecycle = fs.readFileSync(
+      path.join(root, 'scripts/local/secure-stack.sh'),
+      'utf8'
+    );
 
-    expect(secrets).toMatch(/não pode avançar/);
-    expect(secrets).toContain('`V13.3.1` permanece bloqueado');
-    expect(certificate).toContain('`V12.2.2` permanece `Fail`');
+    expect(secrets).toContain('`V13.3.1` é `Pass`');
+    expect(secrets).toContain('make local-secure-down');
+    expect(certificate).toContain('`V12.2.2` permanece `N/A`');
     expect(certificate).toMatch(/Verify return code: 0/);
+    expect(localLifecycle).toContain('mktemp -d /tmp/iot-mqtt-simulator-local.XXXXXX');
+    expect(localLifecycle).toContain('chmod 0700');
+    expect(localLifecycle).toContain('compose down --volumes');
+    expect(localLifecycle).toContain('find "$runtime_dir" -type f -delete');
   });
 
-  it('keeps all 253 ASVS rows auditable and only the two external gates failing', () => {
+  it('keeps all 253 ASVS rows auditable with no applicable requirement failing', () => {
     const matrix = readMatrix();
     const states = matrix.reduce((totals, row) => ({
       ...totals,
       [row.State]: (totals[row.State] || 0) + 1,
     }), {});
     const failures = matrix.filter((row) => row.State === 'Fail');
+    const publicCertificate = matrix.find(
+      (row) => row.Requirement === 'v5.0.0-V12.2.2'
+    );
+    const secretManagement = matrix.find(
+      (row) => row.Requirement === 'v5.0.0-V13.3.1'
+    );
 
     expect(matrix).toHaveLength(253);
-    expect(states).toEqual({ Pass: 150, 'N/A': 101, Fail: 2 });
-    expect(failures.map((row) => row.Requirement)).toEqual([
-      'v5.0.0-V12.2.2',
-      'v5.0.0-V13.3.1',
-    ]);
+    expect(states).toEqual({ Pass: 151, 'N/A': 102 });
+    expect(failures).toEqual([]);
+    expect(publicCertificate).toMatchObject({ Applicable: 'Não', State: 'N/A' });
+    expect(secretManagement).toMatchObject({ Applicable: 'Sim', State: 'Pass' });
     for (const row of matrix) {
       expect(row.Justification).toBeTruthy();
       expect(row.Control).toBeTruthy();
@@ -145,6 +158,5 @@ describe('ASVS Level 2 security documentation', () => {
       expect(row.Evidence).toBeTruthy();
       expect(row.Owner).toBeTruthy();
     }
-    expect(failures.every((row) => row.Owner === 'Operação/Plataforma')).toBe(true);
   });
 });

@@ -1,8 +1,19 @@
 # Gate do certificado público de produção
 
-**Status:** pendente de ambiente público real
-**Owner:** Maintainer do projeto
+**Status:** `N/A` no escopo exclusivamente local aprovado em 2026-07-27
+**Owner:** Arquitetura local
 **Referência:** ASVS `V12.2.2`
+
+## Decisão de escopo vigente
+
+O projeto não terá deploy público ou remoto nesta entrega. A aplicação é
+acessada somente por loopback em `https://localhost:8443`, sem DNS público,
+ingress externo ou usuário remoto. Como `V12.2.2` se aplica a serviços
+external-facing, o requisito está justificado como `N/A`.
+
+O restante deste documento fica preservado como gate dormente. Qualquer decisão
+futura de expor o serviço reabre este controle e exige novo ciclo SDD antes do
+deploy.
 
 ## Objetivo
 
@@ -79,5 +90,6 @@ revogação, nova chave e investigação conforme
 
 ## Critério de fechamento
 
-`V12.2.2` permanece `Fail` enquanto este repositório possuir apenas evidência
-local/CI. Documentar o gate não substitui sua execução no endpoint público.
+No escopo vigente, `V12.2.2` permanece `N/A` enquanto não existir serviço
+external-facing. Se um endpoint público entrar no escopo, este gate volta a ser
+aplicável e permanece `Fail` até sua execução completa.

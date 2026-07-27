@@ -2,13 +2,13 @@
 
 ## Status
 
-🟢 **Aprovada e emendada para fechamento integral do Level 2**
+🟢 **Aprovada e emendada para execução local com Level 2**
 
-**Aprovação humana registrada em:** 2026-07-23 e 2026-07-24
+**Aprovação humana registrada em:** 2026-07-23, 2026-07-24 e 2026-07-27
 
 ## 1. Objetivo
 
-Elevar a segurança do IoT MQTT Simulator antes da release, cobrindo os riscos do
+Elevar a segurança do IoT MQTT Simulator para execução local, cobrindo os riscos do
 **OWASP Top 10:2025** e do **OWASP API Security Top 10:2023**, com
 **OWASP ASVS 5.0.0 Level 2** como nível-alvo de verificação para todos os
 requisitos aplicáveis.
@@ -16,6 +16,10 @@ requisitos aplicáveis.
 O resultado deve ser verificável por testes e evidências. Esta SPEC não autoriza
 afirmar certificação ou conformidade integral com OWASP sem que a matriz ASVS
 Level 2 esteja preenchida e todas as lacunas aplicáveis estejam encerradas.
+
+O perfil seguro pode usar `NODE_ENV=production` para exercitar controles
+fail-closed, mas o limite operacional aprovado em 2026-07-27 é exclusivamente
+local: loopback, sem DNS público, ingress externo ou deploy remoto.
 
 ## 2. Referenciais e nível-alvo
 
@@ -70,6 +74,8 @@ mensurável de verificação.
   administrativamente passa a fazer parte do escopo.
 - WAF, SIEM gerenciado, Kubernetes ou service mesh.
 - Implementação da integração planejada com AWS IoT Core.
+- Deploy público ou remoto, DNS público e certificado emitido por CA pública.
+- Vault, cloud secrets manager ou infraestrutura corporativa externa.
 - Gestão completa de identidades multi-tenant ou autosserviço de cadastro.
 - Correções sem relação com segurança.
 - Execução da `TASK-013` ou criação da tag `v1.0.0`.
@@ -241,8 +247,8 @@ nível-alvo aprovado, a implementação deve também:
   Prometheus, API, Simulator, Alloy e Grafana;
 - substituir senha MQTT por mTLS/identidade de certificado e senha MongoDB da
   API por `MONGODB-X509` com usuário de mínimo privilégio;
-- exigir gestor de secrets como fonte de verdade em produção e limitar o
-  provisionamento local/CI a material efêmero;
+- exigir lifecycle automatizado de secrets no ambiente alvo; no escopo local,
+  criar, armazenar com acesso restrito, entregar e destruir material efêmero;
 - centralizar logs via Grafana Alloy e Loki atrás de gateway mTLS, com volumes
   separados, retenção, exclusão desabilitada e sem acesso de escrita pela
   aplicação;
@@ -250,10 +256,12 @@ nível-alvo aprovado, a implementação deve também:
   por campo, política/inventário criptográfico e SLA de vulnerabilidades;
 - aplicar `Cache-Control: no-store` a respostas autenticadas e de sessão;
 - fixar e testar cipher suites aprovadas;
-- exigir certificado publicamente confiável para o edge no deploy real.
+- classificar certificado público como `N/A` enquanto não existir serviço
+  voltado ao exterior no escopo aprovado.
 
-Não é permitido encerrar a TASK classificando qualquer um desses fluxos
-existentes como `N/A`.
+Requisitos somente podem ser classificados como `N/A` quando o fluxo estiver
+explicitamente fora do limite de confiança aprovado e houver justificativa
+individual. `V12.2.2` satisfaz essa condição; `V13.3.1` permanece aplicável.
 
 ## 7. Critérios de aceite
 
@@ -275,9 +283,13 @@ existentes como `N/A`.
 - [ ] Inatividade, concorrência e administração de sessões passam nos testes.
 - [ ] Entradas HTTP e MQTT inválidas são rejeitadas e testadas.
 - [ ] Apenas Nginx publica tráfego da aplicação; TLS e headers passam nos testes.
-- [ ] Todas as conexões internas usam TLS/mTLS com validação de certificado.
+- [ ] Todas as conexões internas do perfil seguro usam TLS/mTLS com validação
+      de certificado.
 - [ ] MQTT e MongoDB autenticam a API/Simulator por certificado e mínimo
       privilégio, sem credencial backend estática.
+- [ ] O lifecycle local cria secrets fora do Git e das imagens, restringe o
+      diretório temporário, entrega via Docker secrets e destrói o material no
+      teardown.
 - [ ] CI bloqueia vulnerabilidades corrigíveis `high`/`critical`, secrets
       detectados, falhas SAST e imagens inseguras.
 - [ ] Logs e alertas de segurança são verificáveis sem exposição de segredos.
@@ -299,7 +311,8 @@ existentes como `N/A`.
 - [ADR-004 — Monitoramento e Logs via Winston e Prometheus](../adr/ADR-004-observability.md)
 - [ADR-005 — Pipeline de Integração Contínua](../adr/ADR-005-cicd.md)
 - [ADR-006 — Autenticação, sessão, autorização, secrets e transporte seguro](../adr/ADR-006-security-session-transport.md),
-  incluindo a emenda ASVS Level 2 de 2026-07-24.
+  incluindo as emendas ASVS Level 2 de 2026-07-24 e de escopo local de
+  2026-07-27.
 
 ## 9. Task relacionada
 
@@ -315,3 +328,7 @@ existentes como `N/A`.
 - [x] MFA, sessões revogáveis, TLS/mTLS interno, identidades de workload,
       gestão de secrets e logs centralizados autorizados.
 - [x] Implementação da emenda autorizada.
+- [x] Execução exclusivamente local, sem deploy público, aprovada em
+      2026-07-27.
+- [x] `V12.2.2` aprovado como `N/A` por ausência de serviço external-facing.
+- [x] Lifecycle efêmero local aprovado como estratégia aplicável a `V13.3.1`.

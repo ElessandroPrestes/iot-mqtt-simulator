@@ -1,8 +1,8 @@
 # Baseline OWASP ASVS 5.0.0 Level 2
 
-**Status:** Refactor verificado — 2 requisitos aplicáveis permanecem em `Fail`
-**Data:** 2026-07-24
-**Aprovação humana da baseline:** 2026-07-23
+**Status:** Refactor local em validação — nenhum requisito aplicável em `Fail`
+**Data:** 2026-07-27
+**Aprovação humana da baseline:** 2026-07-23 e 2026-07-27
 **Nível-alvo:** Level 2  
 **Escopo:** API, Dashboard, Socket.io e controles de infraestrutura dependentes
 
@@ -47,19 +47,21 @@ linha para cada requisito Level 1/2 e as colunas obrigatórias `Requirement`,
 | V9 | 7 | 0 | 0 | 7 |
 | V10 | 0 | 0 | 29 | 29 |
 | V11 | 10 | 0 | 4 | 14 |
-| V12 | 7 | 1 | 1 | 9 |
-| V13 | 12 | 1 | 0 | 13 |
+| V12 | 7 | 0 | 2 | 9 |
+| V13 | 13 | 0 | 0 | 13 |
 | V14 | 9 | 0 | 0 | 9 |
 | V15 | 12 | 0 | 1 | 13 |
 | V16 | 16 | 0 | 0 | 16 |
 | V17 | 0 | 0 | 7 | 7 |
-| **Total** | **150** | **2** | **101** | **253** |
+| **Total** | **151** | **0** | **102** | **253** |
 
-Todos os 101 itens `N/A` foram avaliados por ID. Eles correspondem a mecanismos
+Todos os 102 itens `N/A` foram avaliados por ID. Eles correspondem a mecanismos
 ausentes do produto, como upload de arquivos, OAuth/OIDC e WebRTC; nenhuma
 conexão ou controle existente foi classificado como não aplicável.
+`V12.2.2` é o único item reclassificado por mudança explícita do limite de
+confiança: não existe serviço voltado ao exterior no alvo exclusivamente local.
 
-## 4. Bloqueios restantes
+## 4. Reavaliação do escopo operacional
 
 O ciclo aprovado corrigiu 32 dos 34 requisitos originalmente em `Fail`.
 Autenticação e sessão, autorização/token, política criptográfica, TLS interno,
@@ -67,18 +69,16 @@ identidades X.509, classificação de dados, SLA de vulnerabilidades e
 centralização protegida de logs possuem controle, teste e evidência individual
 na matriz CSV.
 
-Dois requisitos dependem de um ambiente operacional real e continuam
-bloqueadores, sem exceção ou redução do nível-alvo:
+Em 2026-07-27, o responsável humano removeu deploy público e remoto do escopo:
 
-- `v5.0.0-V12.2.2`: instalar no edge real certificado público confiável e
-  executar o gate de cadeia, hostname, validade, revogação e negociação descrito
-  em `production-certificate-gate.md`;
-- `v5.0.0-V13.3.1`: integrar uma fonte de verdade externa de secrets e
-  evidenciar injeção, rotação, revogação, auditoria e destruição conforme
-  `secrets-lifecycle.md`.
+- `v5.0.0-V12.2.2` passou a `N/A`, pois o texto oficial se restringe a serviços
+  external-facing e o alvo usa apenas `localhost`;
+- `v5.0.0-V13.3.1` passou a `Pass`: a solução local gera secrets e PKI
+  aleatórios fora do Git, restringe o diretório temporário, entrega material
+  por Docker secrets e o destrói junto aos volumes no teardown.
 
-O owner operacional de ambos é `Operação/Plataforma`. Até a produção dessas
-evidências, a TASK permanece em andamento e o review não pode ser aprovado.
+Essa decisão não aprova um deploy real. Qualquer exposição externa futura exige
+nova SPEC, certificado público e gestor operacional de secrets.
 
 ## 5. Evidências operacionais
 
@@ -106,6 +106,6 @@ em `vulnerability-management.md`.
 - [x] 253 requisitos triados individualmente.
 - [x] Todo `Pass` possui controle, teste e evidência.
 - [x] Todo `N/A` possui justificativa individual.
-- [ ] Nenhum requisito aplicável permanece `Fail`.
-- [ ] Exceções possuem aprovação, owner e prazo.
+- [x] Nenhum requisito aplicável permanece `Fail`.
+- [x] Itens `N/A` possuem decisão de escopo e owner.
 - [x] Baseline revisada por humano.

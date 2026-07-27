@@ -96,6 +96,9 @@ ou variável não validada.
   Prometheus, mais `internalTlsConfig.test.js`;
 - JWT/sessão/Argon2id/TOTP: `security.test.js`, `authenticate.test.js`,
   `auth.test.js` e `totp.test.js`;
-- emissão efêmera: `scripts/ci/prepare-dast-secrets.sh`;
-- certificado público: somente a evidência do gate de deploy real pode fechar
-  `V12.2.2`; o certificado local/CI não é substituto.
+- emissão e destruição efêmeras:
+  `scripts/ci/prepare-dast-secrets.sh` e
+  `scripts/local/secure-stack.sh`;
+- certificado público: `V12.2.2` é `N/A` no escopo exclusivamente local. Um
+  futuro serviço external-facing reabre o gate de deploy real; o certificado
+  local não o substituirá.
