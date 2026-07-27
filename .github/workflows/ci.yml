@@ -33,7 +33,7 @@ jobs:
         env:
           NODE_ENV: test
       - if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cobertura-api
           path: services/api/coverage/
@@ -284,7 +284,7 @@ jobs:
           high_count=$(jq '[.site[]?.alerts[]? | select((.riskcode | tonumber) >= 3)] | length' dast/zap.json)
           test "$high_count" -eq 0
       - if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dast-zap
           path: dast/
