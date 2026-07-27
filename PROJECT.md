@@ -14,7 +14,7 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 - Expõe API REST + WebSocket para consumo pelo dashboard
 - Exibe dados em tempo real via dashboard Vue.js com gráficos ECharts
 
-**Status:** Em desenvolvimento ativo — perfil seguro local aprovado
+**Status:** Concluído e aprovado no escopo exclusivamente local
 **Versão:** 1.0.0  
 **SDD-Ready:** Sim (bootstrapado em 2026-07-22)
 
@@ -406,6 +406,8 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 - **Escopo aprovado:** somente estação local; não existe deploy público/remoto.
 - **Perfil recomendado:** `make local-secure-up`.
 - **Edge:** `https://localhost:8443`; HTTP `8080` redireciona para HTTPS.
+- **OpenAPI:** `https://localhost:8443/api/docs/`, habilitado somente pelo
+  lifecycle local.
 - **Credenciais efêmeras:** `make local-credentials`.
 - **Status:** `make local-secure-status`.
 - **Teardown destrutivo e intencional:** `make local-secure-down` remove
@@ -450,9 +452,8 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 - Sem retry persistente para mensagens MQTT perdidas
 - Sem paginação cursor-based (somente offset)
 - Thresholds globais por tipo (não por sensor individual)
-- Sem mecanismo de deduplicação de alertas (alerta novo a cada leitura fora do limite)
 - AWS IoT Core não implementado e fora do escopo local
-- GitHub Actions CD (deploy automático) não implementado — deploy é manual via Docker Compose
+- GitHub Actions CD não implementado e fora do escopo aprovado
 - Sem deploy público/remoto por decisão de escopo
 - Cobertura ampla do Dashboard permanece abaixo dos thresholds auxiliares do
   Vitest; o gate canônico atual é `npm test` + `npm run build`

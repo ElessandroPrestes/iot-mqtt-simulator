@@ -34,6 +34,7 @@ compose() {
   COMPOSE_PROJECT_NAME="$project_name" \
   PUBLIC_ORIGIN="$public_origin" \
   SECRETS_DIR="$runtime_dir" \
+  SWAGGER_ENABLED="true" \
     docker compose -f "$compose_file" "$@"
 }
 
@@ -75,6 +76,7 @@ up() {
     destroy_runtime
     exit 1
   fi
+  compose restart nginx
   echo "Stack local segura iniciada em $public_origin"
   echo "Use 'make local-credentials' para obter o login efêmero."
 }

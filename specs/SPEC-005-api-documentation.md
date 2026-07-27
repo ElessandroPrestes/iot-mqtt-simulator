@@ -1,5 +1,11 @@
 # SPEC-005: Documentação de API com OpenAPI (Swagger)
 
+## Status
+
+🟢 **Aprovada e concluída para execução exclusivamente local**
+
+**Aprovação humana registrada em:** 2026-07-27
+
 ## 1. Objetivo
 Prover uma documentação padronizada, interativa e sempre atualizada das rotas REST disponíveis, facilitando a integração de desenvolvedores terceiros ao sistema de simulação de sensores.
 
@@ -20,5 +26,23 @@ Prover uma documentação padronizada, interativa e sempre atualizada das rotas 
 ## 4. Padrões de Aceite e Arquitetura
 - Nenhuma alteração arquitetural severa; adoção estritamente baseada em anotações JSDoc para que a documentação conviva na mesma árvore de arquivos do código (`routes/*.js`), evitando um grande arquivo `.yaml` monolítico desatualizado.
 
-## 5. Tasks Relacionadas
+## 5. Critérios de Aceite
+
+- [x] Swagger UI responde em `https://localhost:8443/api/docs/` no lifecycle
+      local.
+- [x] Todas as rotas sob `/api/v1` estão presentes no documento OpenAPI.
+- [x] Os schemas `Reading`, `Alert`, `SuccessResponse` e `ErrorResponse` estão
+      publicados.
+- [x] O esquema `bearerAuth` está associado às rotas protegidas.
+- [x] O padrão de produção mantém Swagger desabilitado; a habilitação ocorre
+      explicitamente somente no lifecycle local aprovado.
+- [x] Testes automatizados validam os estados habilitado e desabilitado.
+
+## 6. Task Relacionada
+
 - [TASK-011-openapi-swagger.md](../tasks/TASK-011-openapi-swagger.md)
+
+## 7. Aprovação humana
+
+- [x] Especificação e execução das pendências autorizadas em 2026-07-27.
+- [x] Limite exclusivamente local mantido, sem deploy ou release.

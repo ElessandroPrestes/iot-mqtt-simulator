@@ -1,5 +1,9 @@
 # TASK-001: Evolução Arquitetural Fullstack
 
+## Status
+
+🟢 **Concluída**
+
 ## SPEC Associada
 [SPEC-001-fullstack-architecture-evolution.md](../specs/SPEC-001-fullstack-architecture-evolution.md)
 

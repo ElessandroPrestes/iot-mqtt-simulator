@@ -87,11 +87,11 @@ server {
 - Rede interna entre nginx e api
 
 ## Critério de Aceite
-- [ ] `docker compose -f docker-compose.prod.yml up -d` sobe tudo sem erros
-- [ ] Dashboard acessível em `http://localhost:80`
-- [ ] API acessível em `http://localhost:80/api/`
-- [ ] WebSocket funciona via nginx
-- [ ] Headers de segurança presentes nas respostas
+- [x] `make local-secure-up` sobe o perfil seguro sem erros
+- [x] Dashboard acessível em `https://localhost:8443`
+- [x] API acessível em `https://localhost:8443/api/`
+- [x] WebSocket funciona via Nginx
+- [x] TLS e headers de segurança presentes nas respostas
 
 ## Status
-🔴 **Aberto**
+🟢 **Concluído — endurecido pela SPEC-006**

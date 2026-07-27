@@ -88,4 +88,4 @@ git push origin v1.0.0
 **Todas as TASK-002 a TASK-012 devem estar concluídas antes desta task.**
 
 ## Status
-🔴 **Aberto**
+⚪ **Fora do escopo local aprovado — não executar sem nova aprovação humana**

@@ -1,5 +1,9 @@
 # SPEC-002: Deduplicação de Alertas e Auto-Resolução
 
+## Status
+
+🟢 **Aprovada e concluída**
+
 ## 1. Objetivo
 Evitar spam de alertas no banco de dados e na interface do usuário (Dashboard). A plataforma não deve criar um novo alerta para cada leitura fora do limiar se o sensor já se encontrar naquele estado de alerta. Além disso, o alerta deve ser encerrado (auto-resolvido) automaticamente assim que o sensor normalizar.
 

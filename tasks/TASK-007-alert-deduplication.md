@@ -60,10 +60,10 @@ if (status !== 'normal') {
 - Verificar que alerta é resolvido quando sensor volta ao normal
 
 ## Critério de Aceite
-- [ ] Apenas 1 alerta ativo por `sensorId` + `level` em qualquer momento
-- [ ] Alerta é auto-resolvido quando o sensor volta ao estado `normal`
-- [ ] Testes cobrindo os dois cenários (deduplicação e auto-resolução)
-- [ ] `npm run test:coverage` mantém ≥90%
+- [x] Apenas 1 alerta ativo por `sensorId` + `level` em qualquer momento
+- [x] Alerta é auto-resolvido quando o sensor volta ao estado `normal`
+- [x] Testes cobrindo os dois cenários (deduplicação e auto-resolução)
+- [x] `npm run test:coverage` mantém ≥90%
 
 ## Status
-🔴 **Aberto**
+🟢 **Concluído**

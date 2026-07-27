@@ -51,9 +51,9 @@ response.data.forEach(...)       // response.data = array de sensores
 > não o que a API retorna (ou seja, sem o envelope externo).
 
 ## Critério de Aceite
-- [ ] `npm test` no dashboard passa sem erros
-- [ ] O dashboard carrega dados de sensores e alertas ao rodar `docker compose up`
-- [ ] Mocks dos testes de store alinham com o comportamento do interceptor
+- [x] `npm test` no dashboard passa sem erros
+- [x] O dashboard carrega dados de sensores e alertas ao rodar o perfil local
+- [x] Mocks dos testes de store alinham com o comportamento do interceptor
 
 ## Status
-🔴 **Aberto**
+🟢 **Concluído**

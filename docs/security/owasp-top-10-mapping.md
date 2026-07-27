@@ -55,6 +55,6 @@
 - [x] Categorias Web Top 10 mapeadas.
 - [x] Categorias API Top 10 mapeadas.
 - [x] Controles e tipos de evidência definidos.
-- [ ] Controles implementados.
-- [ ] Testes e evidências anexados.
-- [ ] Nenhuma categoria aplicável permanece `Fail`.
+- [x] Controles implementados.
+- [x] Testes e evidências anexados.
+- [x] Nenhuma categoria aplicável permanece `Fail`.

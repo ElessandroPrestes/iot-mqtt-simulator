@@ -1,5 +1,12 @@
 # SPEC-003: Segurança da API e Autenticação JWT
 
+## Status
+
+🟢 **Aprovada e concluída; controles ampliados pela SPEC-006**
+
+As referências originais a credenciais fixas e Web Storage foram substituídas
+por principals efêmeros, MFA, sessões revogáveis e memória volátil.
+
 ## 1. Objetivo
 Proteger os endpoints REST e WebSocket contra acesso não autorizado, para viabilizar o IoT MQTT Simulator como um ambiente de demonstração corporativo seguro.
 

@@ -46,10 +46,10 @@ expect(res.body.error).toHaveProperty('message');
 - Testar tipo desconhecido retorna `'normal'`
 
 ## Critério de Aceite
-- [ ] `npm run test:coverage` mostra ≥90% de linhas e funções na API
-- [ ] ≥85% de branches
-- [ ] Todos os testes de integração validam o envelope `{ success, data, meta }` ou `{ success, error }`
-- [ ] `responseFormatter.js` e `thresholdStrategy.js` cobertos por testes unitários
+- [x] `npm run test:coverage` mostra ≥90% de linhas e funções na API
+- [x] ≥85% de branches
+- [x] Todos os testes de integração validam o envelope `{ success, data, meta }` ou `{ success, error }`
+- [x] `responseFormatter.js` e `thresholdStrategy.js` cobertos por testes unitários
 
 ## Status
-🔴 **Aberto**
+🟢 **Concluído**

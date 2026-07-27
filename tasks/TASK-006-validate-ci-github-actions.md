@@ -46,9 +46,9 @@ npm run build
 - Confirmar que o job `ci-ok` agrega os 3 jobs corretamente
 
 ## Critério de Aceite
-- [ ] Push na branch `develop` gera CI verde no GitHub Actions
-- [ ] Todos os 3 jobs (`api`, `simulator`, `dashboard`) passam
-- [ ] Job `ci-ok` passa somente quando os 3 anteriores têm sucesso
+- [x] Push na branch `develop` gera CI verde no GitHub Actions
+- [x] Todos os 3 jobs (`api`, `simulator`, `dashboard`) passam
+- [x] Job `ci-ok` passa somente quando os 3 anteriores têm sucesso
 
 ## Status
-🟡 **Não Validado**
+🟢 **Concluído**

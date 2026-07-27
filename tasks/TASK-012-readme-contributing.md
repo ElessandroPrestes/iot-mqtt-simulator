@@ -80,10 +80,10 @@ cd services/dashboard && npm test
 ```
 
 ## Critério de Aceite
-- [ ] Desenvolvedor novo consegue rodar o projeto do zero em < 5 minutos seguindo o README
-- [ ] Todos os links do README apontam para recursos reais
-- [ ] `CONTRIBUTING.md` explica o fluxo SDD do projeto
+- [x] Desenvolvedor novo consegue rodar o projeto do zero em < 5 minutos seguindo o README
+- [x] Todos os links do README apontam para recursos reais
+- [x] `CONTRIBUTING.md` explica o fluxo SDD do projeto
 - [ ] Screenshots ou GIF do dashboard no README (opcional, mas impactante)
 
 ## Status
-🔴 **Aberto**
+🟢 **Concluído** — screenshot/GIF permanece melhoria opcional.

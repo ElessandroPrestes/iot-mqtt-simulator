@@ -105,6 +105,18 @@ function createAuthRouter(config) {
     }
   });
 
+  /**
+   * @swagger
+   * /api/v1/auth/refresh:
+   *   post:
+   *     summary: Rotaciona a sessão usando o cookie HttpOnly.
+   *     tags: [Auth]
+   *     responses:
+   *       200:
+   *         description: Access token renovado.
+   *       401:
+   *         description: Sessão ausente, expirada ou revogada.
+   */
   router.post('/refresh', trustedBrowser, async (req, res, next) => {
     try {
       const cookies = parseCookies(req.headers.cookie);
@@ -128,6 +140,16 @@ function createAuthRouter(config) {
     }
   });
 
+  /**
+   * @swagger
+   * /api/v1/auth/logout:
+   *   post:
+   *     summary: Revoga a sessão atual e remove o cookie.
+   *     tags: [Auth]
+   *     responses:
+   *       200:
+   *         description: Logout concluído.
+   */
   router.post('/logout', trustedBrowser, async (req, res, next) => {
     try {
       const cookies = parseCookies(req.headers.cookie);
@@ -141,6 +163,20 @@ function createAuthRouter(config) {
     }
   });
 
+  /**
+   * @swagger
+   * /api/v1/auth/sessions:
+   *   get:
+   *     summary: Lista as sessões do principal autenticado.
+   *     tags: [Auth]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Sessões ativas retornadas.
+   *       401:
+   *         description: Não autorizado.
+   */
   router.get('/sessions', authenticate, async (req, res, next) => {
     try {
       const sessions = await authService.listSessions(req.user.id);
@@ -150,6 +186,27 @@ function createAuthRouter(config) {
     }
   });
 
+  /**
+   * @swagger
+   * /api/v1/auth/sessions/{familyId}:
+   *   delete:
+   *     summary: Revoga uma sessão pertencente ao principal autenticado.
+   *     tags: [Auth]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: familyId
+   *         required: true
+   *         schema:
+   *           type: string
+   *           format: uuid
+   *     responses:
+   *       200:
+   *         description: Sessão revogada.
+   *       401:
+   *         description: Não autorizado.
+   */
   router.delete(
     '/sessions/:familyId',
     authenticate,
@@ -166,6 +223,32 @@ function createAuthRouter(config) {
     }
   );
 
+  /**
+   * @swagger
+   * /api/v1/auth/admin/sessions/{principalId}/{familyId}:
+   *   delete:
+   *     summary: Revoga uma sessão como administrador de segurança.
+   *     tags: [Auth]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: principalId
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: path
+   *         name: familyId
+   *         required: true
+   *         schema:
+   *           type: string
+   *           format: uuid
+   *     responses:
+   *       200:
+   *         description: Sessão revogada.
+   *       403:
+   *         description: Principal sem permissão administrativa.
+   */
   router.delete(
     '/admin/sessions/:principalId/:familyId',
     authenticate,

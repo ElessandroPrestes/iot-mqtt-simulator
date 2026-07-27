@@ -14,6 +14,15 @@ const { successResponse } = require('../utils/responseFormatter');
  *         description: API está saudável.
  *       503:
  *         description: "API está degradada (ex: sem conexão com banco de dados)."
+ * /api/v1/health:
+ *   get:
+ *     summary: Retorna o mesmo status de saúde pela rota versionada.
+ *     tags: [System]
+ *     responses:
+ *       200:
+ *         description: API está saudável.
+ *       503:
+ *         description: API está degradada.
  */
 router.get('/', async (req, res) => {
   const mongoState = mongoose.connection.readyState;

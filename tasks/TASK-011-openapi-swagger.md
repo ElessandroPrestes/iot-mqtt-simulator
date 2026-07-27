@@ -85,10 +85,10 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 - `ErrorResponse` — envelope `{ success, error }`
 
 ## Critério de Aceite
-- [ ] `GET http://localhost:3000/api/docs` exibe Swagger UI
-- [ ] Todos os endpoints documentados (readings, alerts, sensors, health)
-- [ ] Schemas de request/response documentados
-- [ ] Autenticação via Bearer token configurada no Swagger UI
+- [x] `GET https://localhost:8443/api/docs/` exibe Swagger UI no perfil local
+- [x] Todos os endpoints versionados estão documentados
+- [x] Schemas `Reading`, `Alert`, `SuccessResponse` e `ErrorResponse` documentados
+- [x] Autenticação via Bearer token configurada no Swagger UI
 
 ## Status
-🔴 **Aberto**
+🟢 **Concluído — aprovado e validado localmente em 2026-07-27**

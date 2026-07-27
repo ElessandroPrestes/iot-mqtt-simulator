@@ -43,7 +43,7 @@ elevá-los.
 | `GET /api/v1/alerts/summary` | Não | Sim | Sim | Somente `total,unresolved,critical,warning` |
 | `PATCH /api/v1/alerts/:id/resolve` | Não | Não | `operator` | Body obrigatoriamente vazio; servidor altera somente `resolved` e `resolvedAt` |
 | `GET /metrics` | Não | Não | Não por papel | Somente Prometheus pela rede interna e mTLS |
-| `/api/docs` | Não em produção | Não | Não | Desabilitado por default; qualquer habilitação exige nova decisão |
+| `/api/docs` | Somente lifecycle local | Somente lifecycle local | Somente lifecycle local | Desabilitado por padrão; habilitação local aprovada em 2026-07-27 |
 | Qualquer rota não listada | Não | Não | Não | `404`; nenhum fallback de autorização |
 
 As rotas de autenticação que alteram sessão também exigem `Origin` permitido e

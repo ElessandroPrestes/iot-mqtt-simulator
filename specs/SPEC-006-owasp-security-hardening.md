@@ -265,44 +265,44 @@ individual. `V12.2.2` satisfaz essa condição; `V13.3.1` permanece aplicável.
 
 ## 7. Critérios de aceite
 
-- [ ] Threat model aprovado e versionado.
-- [ ] ADR de autenticação/sessão/transporte aprovado antes do código.
-- [ ] Matriz ASVS 5.0.0 Level 2 contém todos os requisitos aplicáveis com
+- [x] Threat model aprovado e versionado.
+- [x] ADR de autenticação/sessão/transporte aprovado antes do código.
+- [x] Matriz ASVS 5.0.0 Level 2 contém todos os requisitos aplicáveis com
       evidência; não existem itens `Fail` no encerramento.
-- [ ] As dez categorias OWASP Top 10:2025 possuem ao menos um teste ou
+- [x] As dez categorias OWASP Top 10:2025 possuem ao menos um teste ou
       evidência de controle aplicável.
-- [ ] A matriz OWASP API Security Top 10:2023 está coberta ou justificada como
+- [x] A matriz OWASP API Security Top 10:2023 está coberta ou justificada como
       `N/A`.
-- [ ] Não existem credenciais ou segredos padrão no código e nas imagens.
-- [ ] Produção falha ao iniciar com configuração insegura ou incompleta.
-- [ ] Dashboard não realiza auto-login e não persiste tokens em Web Storage.
-- [ ] REST e Socket.io rejeitam acesso anônimo/sem papel com `401` ou `403`.
-- [ ] Login bloqueia brute force conforme o limite definido.
-- [ ] Login de produção exige TOTP e rejeita replay.
-- [ ] Logout e revogação invalidam access token imediatamente.
-- [ ] Inatividade, concorrência e administração de sessões passam nos testes.
-- [ ] Entradas HTTP e MQTT inválidas são rejeitadas e testadas.
-- [ ] Apenas Nginx publica tráfego da aplicação; TLS e headers passam nos testes.
-- [ ] Todas as conexões internas do perfil seguro usam TLS/mTLS com validação
+- [x] Não existem credenciais ou segredos padrão no código e nas imagens.
+- [x] Produção falha ao iniciar com configuração insegura ou incompleta.
+- [x] Dashboard não realiza auto-login e não persiste tokens em Web Storage.
+- [x] REST e Socket.io rejeitam acesso anônimo/sem papel com `401` ou `403`.
+- [x] Login bloqueia brute force conforme o limite definido.
+- [x] Login de produção exige TOTP e rejeita replay.
+- [x] Logout e revogação invalidam access token imediatamente.
+- [x] Inatividade, concorrência e administração de sessões passam nos testes.
+- [x] Entradas HTTP e MQTT inválidas são rejeitadas e testadas.
+- [x] Apenas Nginx publica tráfego da aplicação; TLS e headers passam nos testes.
+- [x] Todas as conexões internas do perfil seguro usam TLS/mTLS com validação
       de certificado.
-- [ ] MQTT e MongoDB autenticam a API/Simulator por certificado e mínimo
+- [x] MQTT e MongoDB autenticam a API/Simulator por certificado e mínimo
       privilégio, sem credencial backend estática.
-- [ ] O lifecycle local cria secrets fora do Git e das imagens, restringe o
+- [x] O lifecycle local cria secrets fora do Git e das imagens, restringe o
       diretório temporário, entrega via Docker secrets e destrói o material no
       teardown.
-- [ ] CI bloqueia vulnerabilidades corrigíveis `high`/`critical`, secrets
+- [x] CI bloqueia vulnerabilidades corrigíveis `high`/`critical`, secrets
       detectados, falhas SAST e imagens inseguras.
-- [ ] Logs e alertas de segurança são verificáveis sem exposição de segredos.
-- [ ] Logs são centralizados em sistema logicamente separado e sem permissão de
+- [x] Logs e alertas de segurança são verificáveis sem exposição de segredos.
+- [x] Logs são centralizados em sistema logicamente separado e sem permissão de
       alteração pela aplicação.
-- [ ] Inventários, políticas, matriz por campo e classificação de dados estão
+- [x] Inventários, políticas, matriz por campo e classificação de dados estão
       versionados e coerentes com a matriz ASVS.
-- [ ] Suítes existentes continuam verdes e os thresholds de cobertura do projeto
+- [x] Suítes existentes continuam verdes e os thresholds de cobertura do projeto
       são mantidos.
-- [ ] DAST baseline contra a stack de produção não apresenta alerta `high`.
-- [ ] `PROJECT.md`, README, OpenAPI e runbooks são atualizados somente após
+- [x] DAST baseline contra a stack local segura não apresenta alerta `high`.
+- [x] `PROJECT.md`, README, OpenAPI e runbooks são atualizados somente após
       implementação, testes e review aprovados.
-- [ ] Nenhuma ação da `TASK-013` é executada como parte desta entrega.
+- [x] Nenhuma ação da `TASK-013` é executada como parte desta entrega.
 
 ## 8. ADRs referenciados
 

@@ -1,5 +1,12 @@
 # SPEC-004: Observabilidade e Produção (Grafana e Proxy)
 
+## Status
+
+🟢 **Aprovada e concluída; topologia endurecida pela SPEC-006**
+
+O escopo final é exclusivamente local, com edge HTTPS em `8443`, tráfego
+interno TLS/mTLS e observabilidade sem portas publicadas diretamente.
+
 ## 1. Objetivo
 Estabilizar a infraestrutura para implantação de produção ("production-like"), introduzindo um Proxy Reverso e um sistema unificado de Observabilidade.
 

@@ -2,7 +2,7 @@
 
 > Estado canônico do roadmap de desenvolvimento.  
 > Gerado em: 2026-07-23 | Baseado em: PROJECT.md + SPEC-001 + TASK-001 + inspeção direta do código-fonte.  
-> Atualizar este documento a cada task concluída.
+> Atualizado em 2026-07-27 após auditoria SDD e validação da stack local.
 
 ---
 
@@ -36,9 +36,9 @@
 
 ---
 
-### ❌ Gaps Identificados
+### Auditoria de gaps e evoluções futuras
 
-#### 🔴 Bugs / Inconsistências de Implementação
+#### Bugs / inconsistências de implementação
 
 | # | ID | Problema | Arquivo | Status |
 |---|---|---|---|---|
@@ -46,39 +46,39 @@
 | 2 | **B2** | Store `sensors.js` usa `response.data.data` (duplo) — interceptor já retorna envelope | `services/dashboard/src/stores/sensors.js` L26, L37 | ✅ Corrigido |
 | 3 | **B3** | Store `alerts.js` tem a mesma inconsistência de duplo `.data` | `services/dashboard/src/stores/alerts.js` | ✅ Corrigido |
 | 4 | **B4** | Testes de integração não validam `success: true` no envelope da resposta | `services/api/tests/integration/routes/*.test.js` | ✅ Corrigido |
-| 5 | **B5** | Testes Vue de components e composables estão vazios (só `.gitkeep`) | `services/dashboard/tests/unit/components/` | 🔴 Aberto |
+| 5 | **B5** | Testes Vue de components e composables | `services/dashboard/tests/unit/components/` | ✅ Corrigido |
 
-#### 🟠 Funcionalidades Ausentes
+#### Funcionalidades e evoluções
 
 | # | ID | Feature | Prioridade | Status |
 |---|---|---|---|---|
-| 1 | **F1** | Deduplicação de alertas (alerta novo a cada leitura fora do limite) | Alta | 🔴 Aberto |
+| 1 | **F1** | Deduplicação e auto-resolução de alertas | Alta | ✅ Implementado |
 | 2 | **F2** | Thresholds por sensor individual (atual é global por tipo) | Média | 🔴 Aberto |
-| 3 | **F3** | Autenticação/autorização na API REST (JWT) | Alta | 🔴 Aberto |
+| 3 | **F3** | Autenticação/autorização na API REST (JWT) | Alta | ✅ Implementado e endurecido |
 | 4 | **F4** | Retry persistente para mensagens MQTT perdidas | Baixa | 🔴 Aberto |
 | 5 | **F5** | Paginação cursor-based (atual é offset) | Baixa | 🔴 Aberto |
-| 6 | **F6** | AWS IoT Core — integração (`infrastructure/aws/` vazio) | Baixa | 🔴 Aberto |
-| 7 | **F7** | nginx reverse proxy (`infrastructure/nginx/` vazio) | Média | 🔴 Aberto |
+| 6 | **F6** | AWS IoT Core — integração | Baixa | ⚪ Fora do escopo local |
+| 7 | **F7** | Nginx reverse proxy | Média | ✅ Implementado com TLS |
 
-#### 🟡 Infraestrutura / DevOps Ausente
+#### Infraestrutura / DevOps
 
 | # | ID | Item | Estado | Status |
 |---|---|---|---|---|
-| 1 | **I1** | CI GitHub Actions — workflow existe mas não foi validado com sucesso | `.github/workflows/ci.yml` | 🟡 Não validado |
-| 2 | **I2** | CD GitHub Actions (deploy automático) | — | 🔴 Não implementado |
-| 3 | **I3** | nginx config para produção | `infrastructure/nginx/` | 🔴 Diretório vazio |
-| 4 | **I4** | AWS IoT Core config | `infrastructure/aws/` | 🔴 Diretório vazio |
-| 5 | **I5** | Stack Grafana/Prometheus completa | `docker-compose.yml` | 🟡 Parcial |
+| 1 | **I1** | CI GitHub Actions | `.github/workflows/ci.yml` | ✅ Validado |
+| 2 | **I2** | CD GitHub Actions (deploy automático) | — | ⚪ Fora do escopo aprovado |
+| 3 | **I3** | Nginx edge seguro | `infrastructure/nginx/` | ✅ Implementado |
+| 4 | **I4** | AWS IoT Core config | `infrastructure/aws/` | ⚪ Fora do escopo local |
+| 5 | **I5** | Stack Grafana/Prometheus completa | `docker-compose.prod.yml` | ✅ Implementado |
 
-#### 🔵 Documentação Ausente
+#### Documentação
 
 | # | ID | Item | Status |
 |---|---|---|---|
-| 1 | **D1** | README.md de onboarding completo | 🟡 Básico |
-| 2 | **D2** | OpenAPI/Swagger para todos os endpoints | 🔴 Ausente |
-| 3 | **D3** | Guia de testes e como ver cobertura | 🔴 Ausente |
-| 4 | **D4** | CONTRIBUTING.md | 🔴 Ausente |
-| 5 | **D5** | CHANGELOG.md | 🔴 Ausente |
+| 1 | **D1** | README.md de onboarding completo | ✅ Concluído |
+| 2 | **D2** | OpenAPI/Swagger para todos os endpoints | ✅ Concluído no perfil local |
+| 3 | **D3** | Guia de testes e como ver cobertura | ✅ Concluído |
+| 4 | **D4** | CONTRIBUTING.md | ✅ Concluído |
+| 5 | **D5** | CHANGELOG/tag/release | ⚪ Fora do escopo aprovado |
 
 ---
 
@@ -135,7 +135,7 @@
 
 #### TASK-005 — Testes de componentes Vue e composables (B5)
 
-- **Status:** 🔴 Aberto
+- **Status:** ✅ Concluído
 - **Prioridade:** P1
 - **Arquivos:** `services/dashboard/tests/unit/components/`, `services/dashboard/tests/unit/composables/`
 - **O que fazer:**
@@ -152,7 +152,7 @@
 
 #### TASK-006 — Validar e Fixar CI GitHub Actions (I1)
 
-- **Status:** 🟡 Não validado
+- **Status:** ✅ Concluído
 - **Prioridade:** P1
 - **Arquivo:** `.github/workflows/ci.yml`
 - **O que fazer:**
@@ -167,7 +167,7 @@
 
 #### TASK-007 — Deduplicação de Alertas (F1)
 
-- **Status:** 🔴 Aberto
+- **Status:** ✅ Concluído
 - **Prioridade:** P1 (negócio crítico)
 - **Arquivos:** `services/api/src/services/mqttService.js`, `services/api/src/repositories/alertRepository.js`
 - **O que fazer:**
@@ -185,7 +185,7 @@
 
 #### TASK-008 — Autenticação JWT na API (F3)
 
-- **Status:** 🔴 Aberto
+- **Status:** ✅ Concluído e ampliado pela SPEC-006
 - **Prioridade:** P2
 - **Arquivos:** `services/api/src/middleware/authenticate.js`, `services/api/src/routes/auth.js`
 - **O que fazer:**
@@ -201,7 +201,7 @@
 
 #### TASK-009 — nginx Reverse Proxy (I3, F7)
 
-- **Status:** 🔴 Aberto
+- **Status:** ✅ Concluído e endurecido pela SPEC-006
 - **Prioridade:** P2
 - **Arquivo:** `infrastructure/nginx/nginx.conf`
 - **O que fazer:**
@@ -210,7 +210,7 @@
   - Headers de segurança (CSP, X-Frame-Options, etc.)
   - Rate limiting no nginx
   - Atualizar `docker-compose.prod.yml` para incluir nginx
-- **Critério de aceite:** `docker compose -f docker-compose.prod.yml up -d` sobe tudo via porta 80
+- **Critério de aceite:** `make local-secure-up` sobe o edge em HTTPS na porta 8443
 
 ---
 
@@ -250,7 +250,7 @@
   - Documentar todos os endpoints com anotações JSDoc
   - Expor em `GET /docs` (através do Nginx na rota `/api/docs`)
   - Incluir exemplos de payload MQTT no README
-- **Critério de aceite:** Swagger UI acessível em `http://localhost:8080/api/docs`
+- **Critério de aceite:** Swagger UI acessível em `https://localhost:8443/api/docs/`
 
 ---
 
@@ -272,7 +272,7 @@
 
 #### TASK-013 — CHANGELOG e Release v1.0.0 (D5)
 
-- **Status:** 🔴 Aberto
+- **Status:** ⚪ Fora do escopo local aprovado
 - **Prioridade:** P3 (último passo)
 - **O que fazer:**
   - Criar `CHANGELOG.md` seguindo [Keep a Changelog](https://keepachangelog.com)
@@ -309,9 +309,9 @@
 - [x] **TASK-008** — API protegida com JWT
 - [x] **TASK-009** — nginx no stack de produção
 - [x] **TASK-010** — Grafana com dashboard pré-configurado
-- [ ] **TASK-011** — Swagger em `/api/docs`
+- [x] **TASK-011** — Swagger em `/api/docs`
 - [x] **TASK-012** — README.md onboarding completo
-- [ ] **TASK-013** — Tag `v1.0.0` criada, `main` atualizada
+- [ ] **TASK-013** — Fora do escopo local: tag/release não autorizados
 
 ---
 
@@ -331,3 +331,5 @@
 | 2026-07-23 | TASK-009 | ✅ Configuração do nginx concluída e adicionada ao docker-compose de produção |
 | 2026-07-23 | TASK-010 | ✅ Grafana e Prometheus configurados e rodando corretamente |
 | 2026-07-23 | TASK-012 | ✅ README.md finalizado com infos de arquitetura, docs de testes e criação do CONTRIBUTING.md |
+| 2026-07-27 | TASK-011 | ✅ OpenAPI completo e Swagger validado em HTTPS no lifecycle local |
+| 2026-07-27 | TASK-014 | ✅ Hardening ASVS Level 2 aprovado no escopo exclusivamente local |

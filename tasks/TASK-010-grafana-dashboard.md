@@ -73,11 +73,11 @@ grafana:
 ```
 
 ## Critério de Aceite
-- [ ] Grafana acessível em `http://localhost:3001`
-- [ ] Datasource Prometheus provisionado automaticamente
-- [ ] Dashboard carregado automaticamente com dados ao vivo
-- [ ] Todos os 5 tipos de painel funcionando
-- [ ] Login: admin/admin
+- [x] Grafana acessível internamente por meio do perfil local
+- [x] Datasource Prometheus provisionado automaticamente
+- [x] Dashboard carregado automaticamente com dados ao vivo
+- [x] Todos os 5 tipos de painel funcionando
+- [x] Login usa credencial efêmera, sem `admin/admin`
 
 ## Status
-🔴 **Aberto**
+🟢 **Concluído — endurecido pela SPEC-006**

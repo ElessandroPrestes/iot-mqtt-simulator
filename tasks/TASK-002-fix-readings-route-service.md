@@ -49,9 +49,9 @@ res.json(successResponse(stats, { since }));
 ```
 
 ## Critério de Aceite
-- [ ] `readings.js` não importa nenhum model Mongoose diretamente
-- [ ] Todos os testes de integração em `tests/integration/routes/readings.test.js` continuam passando
-- [ ] `npm run test:coverage` na API mantém ≥90%
+- [x] `readings.js` não importa nenhum model Mongoose diretamente
+- [x] Todos os testes de integração em `tests/integration/routes/readings.test.js` continuam passando
+- [x] `npm run test:coverage` na API mantém ≥90%
 
 ## Status
-🔴 **Aberto**
+🟢 **Concluído**

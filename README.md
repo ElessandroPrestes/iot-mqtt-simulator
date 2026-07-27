@@ -69,9 +69,9 @@ Você **deve** ler os arquivos `PROJECT.md` e `AGENTS.md` na raiz deste reposit�
 
 ## 🔐 Segurança e roadmap OWASP
 
-O projeto já utiliza controles básicos como autenticação JWT, Helmet, CORS,
-rate limiting, validação Joi e autenticação no broker MQTT. O próximo ciclo de
-hardening foi especificado para tratar os riscos do
+O projeto utiliza autenticação e sessões revogáveis, Helmet, CORS,
+rate limiting, validação Joi, MFA e identidades mTLS. O ciclo de hardening
+implementado trata os riscos do
 [OWASP Top 10:2025](https://owasp.org/Top10/) e do
 [OWASP API Security Top 10:2023](https://owasp.org/API-Security/), adotando
 [OWASP ASVS 5.0.0 Level 2](https://owasp.org/www-project-application-security-verification-standard/)
@@ -138,6 +138,7 @@ O projeto foi construído para ser executado nativamente em containers Docker, e
 
    - **Dashboard:** [https://localhost:8443](https://localhost:8443)
    - **Health:** [https://localhost:8443/health](https://localhost:8443/health)
+   - **OpenAPI/Swagger:** [https://localhost:8443/api/docs/](https://localhost:8443/api/docs/)
 
    O certificado é autoassinado e exclusivo do lifecycle local. O navegador
    pode solicitar confirmação de confiança. Nenhuma porta interna é publicada;

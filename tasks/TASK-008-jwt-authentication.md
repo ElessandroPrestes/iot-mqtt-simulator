@@ -76,11 +76,11 @@ apiClient.interceptors.request.use((config) => {
 - Testar rotas protegidas com token expirado/inválido (esperado: 401)
 
 ## Critério de Aceite
-- [ ] `POST /api/v1/auth/login` retorna JWT
-- [ ] Rotas `/api/v1/**` retornam 401 sem token
-- [ ] Dashboard envia token no header automaticamente
-- [ ] Testes de autenticação passam
-- [ ] `/health` e `/metrics` continuam sem autenticação
+- [x] `POST /api/v1/auth/login` retorna JWT
+- [x] Rotas protegidas `/api/v1/**` retornam 401 sem token
+- [x] Dashboard envia token no header automaticamente
+- [x] Testes de autenticação passam
+- [x] `/health` permanece público e `/metrics` fica restrito à rede interna
 
 ## Status
-🔴 **Aberto**
+🟢 **Concluído — ampliado pela SPEC-006**

@@ -52,9 +52,9 @@ Os diretórios de testes do dashboard para componentes e composables existem mas
 - `jsdom` — já instalado
 
 ## Critério de Aceite
-- [ ] Pelo menos 1 teste por componente UI (`BaseButton`, `BaseCard`, `ToastNotification`, `MetricBadge`)
-- [ ] Teste para `useSocket` composable
-- [ ] `npm test` no dashboard passa com os novos testes
+- [x] Pelo menos 1 teste por componente UI (`BaseButton`, `BaseCard`, `ToastNotification`, `MetricBadge`)
+- [x] Teste para `useSocket` composable
+- [x] `npm test` no dashboard passa com os novos testes
 
 ## Status
-🔴 **Aberto**
+🟢 **Concluído**

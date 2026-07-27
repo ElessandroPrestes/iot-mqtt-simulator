@@ -1,5 +1,9 @@
 # SPEC-001: Evolução Arquitetural Fullstack (Design System, Padrões e Contratos)
 
+## Status
+
+🟢 **Aprovada e concluída**
+
 ## 1. Objetivo
 Elevar a maturidade arquitetural de todo o sistema. No Frontend, introduzir um Design System consistente com Vue 3 e Tailwind CSS para componentes reutilizáveis. No Backend, aplicar os padrões de projeto Repository e Strategy para melhorar a testabilidade e o isolamento do código, além de padronizar rigorosamente os contratos de comunicação da API REST.
 
@@ -58,12 +62,12 @@ Todos os endpoints REST devem obedecer ao seguinte formato estrito:
   - *Error*: Capturar `error.response.data.error`, formatar e invocar a notificação de erro global na UI (Toast) antes de propagar o reject para a store.
 
 ## 5. Critérios de Aceite
-- [ ] O `iot_api` possui o diretório `repositories/` separando a lógica do banco de dados dos serviços.
-- [ ] O cálculo de thresholds utiliza o padrão Strategy, eliminando `if/else` ou objetos soltos genéricos para diferentes comportamentos de sensor.
-- [ ] Todos os requests GET, POST, PATCH da API respondem envelopados no padrão `{ success, data, meta }` ou `{ success, error }`.
-- [ ] O `client.js` do Vue possui interceptors implementados validando os contratos novos da API sem quebrar as views existentes.
-- [ ] Um sistema de Notificação (Toast) feito com Design System visual (Tailwind) está disparando ao receber os erros formatados da API (HTTP 4xx/5xx).
-- [ ] Os testes unitários existentes e de integração da API continuam com >90% de coverage e foram ajustados ao novo formato de resposta JSON.
+- [x] O `iot_api` possui o diretório `repositories/` separando a lógica do banco de dados dos serviços.
+- [x] O cálculo de thresholds utiliza o padrão Strategy, eliminando `if/else` ou objetos soltos genéricos para diferentes comportamentos de sensor.
+- [x] Todos os requests GET, POST, PATCH da API respondem envelopados no padrão `{ success, data, meta }` ou `{ success, error }`.
+- [x] O `client.js` do Vue possui interceptors implementados validando os contratos novos da API sem quebrar as views existentes.
+- [x] Um sistema de Notificação (Toast) feito com Design System visual (Tailwind) está disparando ao receber os erros formatados da API (HTTP 4xx/5xx).
+- [x] Os testes unitários existentes e de integração da API continuam com >90% de coverage e foram ajustados ao novo formato de resposta JSON.
 
 ## 6. ADRs Referenciados
 - **ADR-001-architecture.md** (Microserviços baseados em eventos)
