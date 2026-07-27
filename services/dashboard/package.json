@@ -18,7 +18,7 @@
     "clsx": "^2.1.1",
     "dayjs": "^1.11.11",
     "echarts": "^5.5.0",
-    "pinia": "^2.1.7",
+    "pinia": "^4.0.2",
     "socket.io-client": "^4.7.5",
     "vue": "^3.4.27",
     "vue-echarts": "^6.7.3",
