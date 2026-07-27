@@ -84,10 +84,9 @@ secrets, auditoria, alertas e gates de segurança no CI:
 - [SPEC-006 — Hardening de Segurança OWASP](specs/SPEC-006-owasp-security-hardening.md)
 - [TASK-014 — Hardening de Segurança OWASP](tasks/TASK-014-owasp-security-hardening.md)
 
-> **Estado atual:** a SPEC foi aprovada e a TASK está pronta, mas a implementação
-> ainda não foi iniciada. O projeto não declara certificação ou conformidade
-> OWASP ASVS Level 2 até que todos os controles, testes e evidências previstos
-> estejam concluídos e revisados.
+> **Estado atual:** a TASK-014 foi implementada e aprovada para execução
+> exclusivamente local. A matriz possui 151 `Pass`, 102 `N/A` e zero `Fail`.
+> Isso não constitui certificação OWASP nem autoriza deploy público.
 
 ---
 
@@ -108,56 +107,53 @@ O projeto foi construído para ser executado nativamente em containers Docker, e
    cd iot-mqtt-simulator
    ```
 
-2. **Configuração de Ambiente:**
-   Copie o template de variáveis de ambiente. Em ambiente local, as credenciais padrão do `.env.example` já estão sincronizadas com o `docker-compose.yml`.
+2. **Inicie o perfil seguro local:**
+
    ```bash
-   cp .env.example .env
+   make local-secure-up
    ```
 
-3. **Subindo a Infraestrutura (Dev vs Prod):**
-   Execute o build e levante todos os serviços em background com os atalhos do Makefile.
-   O Docker vai construir as imagens do Node.js (API, Dashboard e Simulator) e iniciar o Mosquitto, MongoDB, Nginx, Prometheus e Grafana.
-   
-   Para ambiente de Produção (Stack completa com Monitoramento e Proxy Nginx):
+   Esse comando cria secrets e certificados aleatórios fora do Git, constrói
+   as imagens e inicia toda a stack em um projeto Compose isolado.
+
+3. **Obtenha o login efêmero:**
+
    ```bash
-   make prod-build
-   make prod-up
+   make local-credentials
    ```
 
-   Para ambiente de Desenvolvimento (sem Nginx):
+   O comando exibe usuário, senha e o TOTP vigente. O código TOTP muda a cada
+   30 segundos e não pode ser reutilizado.
+
+4. **Verifique a execução:**
+
    ```bash
-   make build
-   make up
+   make local-secure-status
    ```
 
-4. **Verificando a Execução:**
+   Broker, MongoDB, API, Dashboard, Nginx e gateway Loki devem aparecer como
+   `healthy`; os demais serviços devem estar `Up`.
 
-   Produção:
+5. **Acesse a aplicação:**
+
+   - **Dashboard:** [https://localhost:8443](https://localhost:8443)
+   - **Health:** [https://localhost:8443/health](https://localhost:8443/health)
+
+   O certificado é autoassinado e exclusivo do lifecycle local. O navegador
+   pode solicitar confirmação de confiança. Nenhuma porta interna é publicada;
+   HTTP em `8080` apenas redireciona para HTTPS.
+
+6. **Encerre e destrua o ambiente quando terminar:**
+
    ```bash
-   docker compose -f docker-compose.prod.yml ps
+   make local-secure-down
    ```
 
-   Desenvolvimento:
-   ```bash
-   docker compose ps
-   ```
+   Esse teardown remove containers, volumes, dados e todos os secrets
+   efêmeros. A remoção é intencional; a próxima inicialização cria identidades
+   novas.
 
-   *Certifique-se de que os serviços `broker`, `mongo`, `api`, `simulator` e `dashboard` estejam com status "Up". Na stack de produção, verifique também `nginx`, `prometheus` e `grafana`.*
-
-5. **Acessando a Aplicação (Produção `make prod-up`):**
-   - **Dashboard (Nginx):** [http://localhost:8080](http://localhost:8080)
-   - **Health da API (via Nginx):** [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health)
-   - **Swagger UI (via Nginx):** [http://localhost:8080/api/docs](http://localhost:8080/api/docs)
-   - **Grafana:** [http://localhost:3001](http://localhost:3001) *(User: `admin`, Pass: `admin`)*
-   - **Prometheus UI:** [http://localhost:9091](http://localhost:9091)
-   
-   Em desenvolvimento (`make up`):
-
-   - Dashboard: [http://localhost:5173](http://localhost:5173)
-   - Health da API: [http://localhost:3000/api/v1/health](http://localhost:3000/api/v1/health)
-   - Swagger UI: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
-
-6. **Rodando os Testes e Cobertura:**
+7. **Rodando os testes:**
 
    Suíte principal:
    ```bash
@@ -171,39 +167,28 @@ O projeto foi construído para ser executado nativamente em containers Docker, e
    npm run test:coverage
    ```
 
-   Testes e cobertura do Dashboard:
+   Testes e build do Dashboard:
    ```bash
    cd services/dashboard
    npm test
-   npm run test:coverage
+   npm run build
    ```
 
-   *(A cobertura deve respeitar os limites definidos em `standards/testing.md`.)*
-
-7. **Parando o Ambiente:**
-
-   Produção:
-   ```bash
-   make prod-down
-   ```
-
-   Desenvolvimento:
-   ```bash
-   make down
-   ```
-
-   *(Utilitários extras: use `make logs` para acompanhar os logs em tempo real ou `make help` para ver todos os atalhos disponíveis.)*
+   O threshold de cobertura obrigatório atual se aplica à API. O Dashboard
+   possui relatório auxiliar, mas seu gate canônico é teste + build.
 
 ### Solução de problemas do proxy
 
-Se `/api/v1/health`, `/api/docs` ou as requisições do Dashboard retornarem `Cannot GET /v1/...` ou `Cannot GET /docs`, valide e recarregue a configuração montada no Nginx:
+Se o Dashboard ou o health não responderem, confira o estado e os logs do
+projeto local isolado:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec nginx nginx -t
-docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+make local-secure-status
+make local-secure-logs
 ```
 
-O proxy deve preservar o prefixo `/api` ao encaminhar as requisições para a API.
+Para recriar todo o ambiente com identidades novas, execute
+`make local-secure-down` e depois `make local-secure-up`.
 
 ## 📖 Payload MQTT (Exemplos)
 

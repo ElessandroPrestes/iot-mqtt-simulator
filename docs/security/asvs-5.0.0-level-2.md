@@ -1,6 +1,6 @@
 # Baseline OWASP ASVS 5.0.0 Level 2
 
-**Status:** Refactor local em validação — nenhum requisito aplicável em `Fail`
+**Status:** Review aprovado no escopo local — nenhum requisito aplicável em `Fail`
 **Data:** 2026-07-27
 **Aprovação humana da baseline:** 2026-07-23 e 2026-07-27
 **Nível-alvo:** Level 2  
@@ -82,7 +82,7 @@ nova SPEC, certificado público e gestor operacional de secrets.
 
 ## 5. Evidências operacionais
 
-- API: 188 testes, 31 suites e cobertura acima do gate.
+- API: 190 testes, 31 suites e cobertura acima do gate.
 - Dashboard: 59 testes e build aprovado.
 - Simulator: 28 testes e cobertura acima do gate.
 - Stack isolada: TLS externo e interno, mTLS, autenticação, ACL, identidades
@@ -109,3 +109,4 @@ em `vulnerability-management.md`.
 - [x] Nenhum requisito aplicável permanece `Fail`.
 - [x] Itens `N/A` possuem decisão de escopo e owner.
 - [x] Baseline revisada por humano.
+- [x] Review Agent aprovou o escopo local no commit `a092ac9`.

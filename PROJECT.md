@@ -14,7 +14,7 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 - Expõe API REST + WebSocket para consumo pelo dashboard
 - Exibe dados em tempo real via dashboard Vue.js com gráficos ECharts
 
-**Status:** Em desenvolvimento ativo  
+**Status:** Em desenvolvimento ativo — perfil seguro local aprovado
 **Versão:** 1.0.0  
 **SDD-Ready:** Sim (bootstrapado em 2026-07-22)
 
@@ -212,11 +212,13 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 ### Comandos
 
 ```bash
-# Desenvolvimento
-docker compose up -d
+# Perfil seguro exclusivamente local (recomendado)
+make local-secure-up
+make local-credentials
+make local-secure-status
 
-# Produção
-docker compose -f docker-compose.prod.yml up -d
+# Teardown: remove containers, volumes e secrets efêmeros
+make local-secure-down
 
 # API tests
 cd services/api && npm test
@@ -227,7 +229,7 @@ cd services/simulator && npm test
 
 # Dashboard tests
 cd services/dashboard && npm test
-cd services/dashboard && npm run test:coverage
+cd services/dashboard && npm run build
 ```
 
 ---
@@ -356,12 +358,15 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 
 ## 10. Segurança
 
-- **MQTT:** Autenticação usuário/senha (arquivo passwd Mosquitto)
-- **API:** helmet (headers), CORS configurável, rate-limit 300 req/min por IP
-- **Secrets:** variáveis de ambiente via .env (nunca commitadas)
-- **AWS IoT Core (produção):** mTLS com certificados x509
-- **MongoDB:** sem autenticação em dev (isolado em rede Docker)
-- **Produção:** nginx como proxy reverso com TLS termination
+- **MQTT no perfil seguro:** mTLS e ACL por identidade de workload
+- **API:** access JWT curto, refresh rotativo, MFA TOTP, RBAC, Helmet, CORS e
+  rate limits por fluxo
+- **Secrets locais:** geração aleatória em diretório temporário `0700`,
+  entrega por Docker secrets e destruição no teardown
+- **Workloads:** mTLS com certificados X.509 individuais e de curta duração
+- **MQTT seguro:** identidade de certificado e ACL por workload
+- **MongoDB seguro:** TLS + `MONGODB-X509` e principal de mínimo privilégio
+- **Edge local:** Nginx com TLS 1.2/1.3 em `https://localhost:8443`
 
 ---
 
@@ -396,13 +401,19 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 > Jobs `api`, `simulator` e `dashboard` rodam em **paralelo**.  
 > O job `ci-ok` só passa se todos os anteriores tiverem sucesso.
 
-### Deploy (manual)
+### Execução local
 
-- **Dev:** `docker compose up -d`
-- **Prod:** `docker compose -f docker-compose.prod.yml up -d`
-- **Build imagens:** Multi-stage Dockerfile (development/production targets)
-- **AWS IoT Core:** integração planejada (infra/aws vazio)
-- **nginx:** configuração planejada (infra/nginx vazio)
+- **Escopo aprovado:** somente estação local; não existe deploy público/remoto.
+- **Perfil recomendado:** `make local-secure-up`.
+- **Edge:** `https://localhost:8443`; HTTP `8080` redireciona para HTTPS.
+- **Credenciais efêmeras:** `make local-credentials`.
+- **Status:** `make local-secure-status`.
+- **Teardown destrutivo e intencional:** `make local-secure-down` remove
+  containers, volumes e secrets locais.
+- **Build imagens:** Dockerfiles multi-stage com targets de produção.
+- **AWS IoT Core:** fora do escopo.
+- **Deploy futuro:** exige novo ciclo SDD, certificado público e gestor externo
+  de secrets.
 
 ---
 
@@ -440,9 +451,11 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 - Sem paginação cursor-based (somente offset)
 - Thresholds globais por tipo (não por sensor individual)
 - Sem mecanismo de deduplicação de alertas (alerta novo a cada leitura fora do limite)
-- AWS IoT Core e nginx (produção) não implementados
+- AWS IoT Core não implementado e fora do escopo local
 - GitHub Actions CD (deploy automático) não implementado — deploy é manual via Docker Compose
-- Sem autenticação/autorização na API REST
+- Sem deploy público/remoto por decisão de escopo
+- Cobertura ampla do Dashboard permanece abaixo dos thresholds auxiliares do
+  Vitest; o gate canônico atual é `npm test` + `npm run build`
 
 ---
 

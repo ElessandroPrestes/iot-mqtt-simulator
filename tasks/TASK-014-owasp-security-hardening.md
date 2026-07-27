@@ -2,7 +2,7 @@
 
 ## Status
 
-🟠 **Em andamento — refactor do escopo local em validação**
+🟢 **Concluída — aprovada para execução exclusivamente local**
 
 A SPEC-006 foi aprovada por humano em 2026-07-23. Em 2026-07-27, o responsável
 humano decidiu que a entrega será exclusivamente local, sem deploy público.
@@ -68,7 +68,7 @@ alvo OWASP ASVS 5.0.0 Level 2 e cobrir adequadamente OWASP Top 10:2025.
       `https://localhost:8443`.
 - [x] Matriz final: 151 `Pass`, 102 `N/A` e zero `Fail`.
 - [x] Apontamentos do review resolvidos pelo novo escopo aprovado.
-- [ ] Aprovação final do Review Agent e do risco residual.
+- [x] Aprovação final do Review Agent e do risco residual local.
 
 ## 1. Artefatos e modificações necessárias
 
@@ -297,8 +297,9 @@ Não misturar release, changelog ou tag nesses commits.
 - [x] DAST baseline não apresenta alerta `high`.
 - [x] Matriz ASVS contém uma linha auditável para cada um dos 253 requisitos.
 - [x] Matriz ASVS 5.0.0 Level 2 não possui item aplicável em `Fail`.
-- [ ] Review Agent: `Approved`.
-- [ ] `PROJECT.md`, README, OpenAPI e runbooks refletem o estado testado.
+- [x] Review Agent: `Approved`.
+- [x] `PROJECT.md`, README e runbooks refletem o estado testado; OpenAPI não
+      mudou porque os contratos HTTP permaneceram inalterados.
 - [x] Nenhuma alteração de `CHANGELOG.md`, tag `v1.0.0` ou merge de release foi
       realizada.
 
@@ -307,6 +308,9 @@ Não misturar release, changelog ou tag nesses commits.
 A TASK só pode ser marcada como concluída quando todos os gates finais estiverem
 atendidos, as evidências estiverem versionadas e houver aprovação humana do
 risco residual. Isso não equivale a certificação OWASP independente.
+
+Critério atendido em 2026-07-27 para o limite exclusivamente local. Deploy
+público continua fora do escopo e exige nova SPEC.
 
 ## 6. Plano aprovado para os 34 requisitos em `Fail`
 
