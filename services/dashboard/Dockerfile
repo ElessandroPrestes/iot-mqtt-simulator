@@ -1,4 +1,4 @@
-FROM node:22-alpine@sha256:b74031e546d7f4faf561d797ac1b76beccac856a042815ca77db4fd047581605 AS development
+FROM node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4 AS development
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -6,7 +6,7 @@ COPY . .
 EXPOSE 5173
 CMD ["npm", "run", "dev"]
 
-FROM node:22-alpine@sha256:b74031e546d7f4faf561d797ac1b76beccac856a042815ca77db4fd047581605 AS build
+FROM node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4 AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
