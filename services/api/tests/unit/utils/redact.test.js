@@ -27,6 +27,11 @@ describe('log redaction', () => {
       jwt,
       'mongodb://user:database-password@mongo:27017/db',
       'password=query-secret',
+      'Endpoint=sb://example/;SharedAccessKeyName=listen;SharedAccessKey=azure-secret',
+      'SharedAccessSignature=signature-secret',
+      'AccountKey=storage-secret',
+      'sig=sas-signature',
+      'sas=sas-token',
     ].join(' ');
 
     const sanitized = sanitizeString(value);
@@ -35,5 +40,10 @@ describe('log redaction', () => {
     expect(sanitized).not.toContain(jwt);
     expect(sanitized).not.toContain('database-password');
     expect(sanitized).not.toContain('query-secret');
+    expect(sanitized).not.toContain('azure-secret');
+    expect(sanitized).not.toContain('signature-secret');
+    expect(sanitized).not.toContain('storage-secret');
+    expect(sanitized).not.toContain('sas-signature');
+    expect(sanitized).not.toContain('sas-token');
   });
 });

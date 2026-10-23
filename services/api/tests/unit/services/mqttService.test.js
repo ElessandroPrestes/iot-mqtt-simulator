@@ -21,7 +21,12 @@ jest.mock('../../../src/services/metricsService', () => ({
   mqttMessagesTotal: { inc: jest.fn() },
   mqttMessagesRejectedTotal: { inc: jest.fn() },
   sensorValueGauge: { set: jest.fn() },
-  alertsTotal: { inc: jest.fn() }
+  alertsTotal: { inc: jest.fn() },
+  telemetryMessagesTotal: { inc: jest.fn() },
+  telemetryMessagesRejectedTotal: { inc: jest.fn() },
+  telemetryProcessingDurationSeconds: { observe: jest.fn() },
+  telemetryIngressReconnectsTotal: { inc: jest.fn() },
+  telemetryIngressFailuresTotal: { inc: jest.fn() },
 }));
 
 describe('mqttService', () => {

@@ -1,86 +1,73 @@
-import mqtt from 'mqtt';
 import { config } from './config.js';
-import { TemperatureSensor } from './sensors/temperatureSensor.js';
-import { PressureSensor } from './sensors/pressureSensor.js';
-import { HumiditySensor } from './sensors/humiditySensor.js';
-import { VibrationSensor } from './sensors/vibrationSensor.js';
+import { assertAzureBudget } from './azureBudget.js';
+import { createPublisher } from './publishers/createPublisher.js';
+import { buildSensors } from './sensors/factory.js';
+import { Simulator } from './simulator.js';
 import { logger } from './logger.js';
 
-const SENSOR_TYPES = [
-  { Cls: TemperatureSensor, topic: config.topics.temperature, prefix: 'TEMP' },
-  { Cls: PressureSensor,    topic: config.topics.pressure,    prefix: 'PRES' },
-  { Cls: HumiditySensor,    topic: config.topics.humidity,    prefix: 'HUMI' },
-  { Cls: VibrationSensor,   topic: config.topics.vibration,   prefix: 'VIBR' },
-];
-
-function buildSensors(count, anomalyProb) {
-  return SENSOR_TYPES.flatMap(({ Cls, topic, prefix }) =>
-    Array.from({ length: count / 2 }, (_, i) =>
-      ({
-        sensor: new Cls(`${prefix}-${String(i + 1).padStart(2, '0')}`, {
-          anomalyProbability: anomalyProb,
-        }),
-        topic: `${topic}/${prefix}-${String(i + 1).padStart(2, '0')}`,
-      })
+function estimatePayloadBytes(sensors) {
+  return Math.max(
+    ...sensors.map(({ sensor }) =>
+      Buffer.byteLength(JSON.stringify(sensor.read()), 'utf8')
     )
   );
 }
 
 async function main() {
-  logger.info('Connecting to MQTT broker');
+  const sensors = buildSensors(
+    config.simulator.sensorsCount,
+    config.simulator.anomalyProbability
+  );
+  const publisher = createPublisher(config, logger);
+  let simulator = null;
+  let shuttingDown = false;
 
-  const client = mqtt.connect(`${config.mqtt.protocol}://${config.mqtt.host}:${config.mqtt.port}`, {
-    clientId: config.mqtt.clientId,
-    clean: true,
-    reconnectPeriod: 3000,
-    ...(config.mqtt.protocol === 'mqtts'
-      ? {
-          ca: config.mqtt.ca,
-          cert: config.mqtt.cert,
-          key: config.mqtt.key,
-          rejectUnauthorized: true,
-          servername: config.mqtt.host,
-          minVersion: 'TLSv1.2',
-          ciphers: config.mqtt.ciphers,
-        }
-      : {
-          username: config.mqtt.username,
-          password: config.mqtt.password,
-        }),
-  });
+  const shutdown = async (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
 
-  client.on('connect', () => {
-    logger.info('Connected to MQTT broker');
+    logger.info(`Received ${signal}. Shutting down...`);
+    simulator?.stop();
+    await publisher.stop();
+    process.exit(0);
+  };
 
-    const sensors = buildSensors(
-      config.simulator.sensorsCount,
-      config.simulator.anomalyProbability
-    );
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 
-    setInterval(() => {
-      sensors.forEach(({ sensor, topic }) => {
-        const reading = sensor.read();
-        const payload = JSON.stringify(reading);
-
-        client.publish(topic, payload, { qos: 1, retain: false }, (err) => {
-          if (err) logger.error('MQTT publish failed', { topic, error: err.message });
-        });
-
-        if (reading.isAnomaly) {
-          logger.warn('Sensor anomaly detected', {
-            sensorId: sensor.id,
-            value: reading.value,
-            unit: reading.unit,
-          });
-        }
+  try {
+    if (config.transport === 'azure') {
+      const budget = assertAzureBudget({
+        sensorsCount: sensors.length,
+        intervalMs: config.simulator.intervalMs,
+        payloadBytes: estimatePayloadBytes(sensors),
+        dailyMessageBudget: config.azure.dailyMessageBudget,
+        allowOverage: config.azure.allowOverage,
       });
-    }, config.simulator.intervalMs);
-  });
+      logger.info('Azure message budget check', budget);
+    }
 
-  client.on('error', (err) => logger.error('MQTT connection error', {
-    error: err.message,
-  }));
-  client.on('reconnect', () => logger.info('Reconnecting to MQTT broker'));
+    await publisher.start();
+
+    simulator = new Simulator({
+      sensors,
+      publisher,
+      intervalMs: config.simulator.intervalMs,
+      logger,
+    });
+    simulator.start();
+
+    logger.info('Simulator started', {
+      transport: config.transport,
+      sensors: sensors.length,
+      intervalMs: config.simulator.intervalMs,
+    });
+  } catch (err) {
+    logger.error('Simulator startup failed', { error: err.message });
+    simulator?.stop();
+    await publisher.stop();
+    process.exit(1);
+  }
 }
 
 main();

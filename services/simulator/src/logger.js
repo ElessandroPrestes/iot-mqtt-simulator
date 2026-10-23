@@ -1,8 +1,9 @@
 import { appendFileSync } from 'node:fs';
+import { redact } from './redact.js';
 
 function write(level, message, metadata = {}) {
   const entry = JSON.stringify({
-    ...metadata,
+    ...redact(metadata),
     level,
     message,
     timestamp: new Date().toISOString(),

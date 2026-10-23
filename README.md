@@ -46,6 +46,72 @@ graph TD
     class N,P,G proxy;
 ```
 
+### Transporte de telemetria
+
+O modo padrão é `local`, com publicação no Mosquitto via
+`TELEMETRY_TRANSPORT=local`. O modo local não exige SDK ou credencial Azure.
+
+O modo `azure` publica no IoT Hub por MQTT usando uma identidade de gateway.
+Configure `AZURE_IOT_HUB_DEVICE_CONNECTION_STRING` ou, preferencialmente em
+produção, `AZURE_IOT_HUB_DEVICE_CONNECTION_STRING_FILE`. Este incremento usa
+connection string/SAS; X.509 permanece a evolução preferencial para produção.
+A guarda de custo bloqueia o start quando a estimativa diária ultrapassa
+`AZURE_DAILY_MESSAGE_BUDGET` (padrão 8000), salvo
+`AZURE_ALLOW_OVERAGE=true`.
+
+No modo Azure, a API consome o endpoint interno compatível com Event Hubs usando
+`AZURE_EVENT_HUB_CONNECTION_STRING` ou `AZURE_EVENT_HUB_CONNECTION_STRING_FILE`,
+`AZURE_EVENT_HUB_NAME` e `AZURE_EVENT_HUB_CONSUMER_GROUP` (padrão `$Default`).
+O MQTT não é inicializado nesse modo. O consumidor usa `messageId` para
+deduplicação durável em `ProcessedMessage`; o `/health` passa a expor
+`transport` e `services.azureEventHubs`, mantendo os campos anteriores. Antes de
+habilitar o índice único parcial de alertas ativos em uma base existente,
+execute a migração idempotente:
+
+```bash
+cd services/api
+npm run migrate:alert-uniqueness
+```
+
+A migração mantém o alerta ativo mais recente por `sensorId + level`, resolve os
+demais e cria o índice `uniq_active_alert_per_sensor_level`. Ela pode ser
+executada mais de uma vez sem alterar duplicados já resolvidos.
+
+A integração completa, incluindo consumo via Event Hubs, está descrita na
+[SPEC-009](specs/SPEC-009-azure-iot-hub-integration.md).
+
+### Docker opcional com Azure
+
+O compose local não é alterado. Para executar a stack com Azure, use o overlay
+e mantenha as credenciais fora do Git:
+
+```bash
+cp .env.example .env
+# Preencha AZURE_IOT_HUB_* no simulador e AZURE_EVENT_HUB_* na API.
+# O compose de desenvolvimento também exige JWT_SECRET preenchido; para o
+# perfil seguro local, prefira make local-secure-up.
+docker compose -f docker-compose.yml -f docker-compose.azure.yml up -d --build
+```
+
+O broker Mosquitto continua no compose, mas não é usado como transporte de
+telemetria nesse perfil. Em produção, prefira os secrets `*_FILE` e não escreva
+connection strings no compose. A API fica em `http://localhost:3000` e o health
+deve mostrar `transport: azure` e `services.azureEventHubs.status: connected`.
+Se o status ficar `error`, confira o nome do Event Hub, o consumer group, a
+connection string e os logs da API sem expor secrets.
+
+Para voltar ao modo local, sem apagar volumes:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.azure.yml down
+# Garanta TELEMETRY_TRANSPORT=local no .env e suba o compose normal.
+docker compose up -d --build
+```
+
+Não use `down -v` no rollback: isso remove os volumes e os dados locais. A
+migração `npm run migrate:alert-uniqueness` continua necessária antes de
+habilitar o índice único em bases existentes.
+
 ---
 
 ## 🤖 Para Inteligências Artificiais
@@ -60,7 +126,7 @@ Você **deve** ler os arquivos `PROJECT.md`, `AGENTS.md` e os arquivos de entrad
 - **Broker:** Eclipse Mosquitto (MQTT v5)
 - **Banco de Dados:** MongoDB 7.0 (Timeseries Collection com TTL)
 - **API Backend:** Node.js (Express, Socket.io, prom-client)
-- **Simulator:** Node.js (ESM, mqtt.js)
+- **Simulator:** Node.js (ESM, mqtt.js, azure-iot-device opcional)
 - **Frontend Dashboard:** Vue 3, Vite, Pinia, TailwindCSS, ECharts
 - **Infraestrutura:** Docker & Docker Compose
 - **Observabilidade:** Prometheus (Métricas) e Winston (Logs)

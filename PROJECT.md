@@ -33,6 +33,7 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 | Reading | Leitura pontual de um sensor com timestamp |
 | Alert | Notificação gerada quando leitura ultrapassa threshold |
 | Threshold | Limiar configurável de warning/critical por tipo de sensor |
+| ProcessedMessage | Registro durável de mensagem Azure processada, com claim/lease e TTL |
 
 ---
 
@@ -113,7 +114,9 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 ### Simulator (services/simulator) — ESM
 | Dependência | Versão | Propósito |
 |---|---|---|
-| mqtt | ^5.3.4 | Publicação MQTT |
+| mqtt | ^5.3.4 | Publicação MQTT local |
+| azure-iot-device | 1.18.4 | Cliente de dispositivo do IoT Hub |
+| azure-iot-device-mqtt | 1.16.4 | Transporte MQTT do dispositivo Azure |
 | dotenv | ^16.4.5 | Variáveis de ambiente |
 
 **Dev:** jest ^29.7 (com experimental-vm-modules)
@@ -154,6 +157,7 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 ├── CODE_OF_CONDUCT.md           # Código de conduta
 ├── docker-compose.yml           # Ambiente de desenvolvimento
 ├── docker-compose.prod.yml      # Ambiente de produção
+├── docker-compose.azure.yml     # Overlay opcional para Azure IoT Hub
 ├── .env.example                 # Template de variáveis de ambiente
 ├── .github/workflows/           # CI/CD (GitHub Actions)
 ├── workflows/                   # Fluxos canônicos SDD (feature, verification)
@@ -176,18 +180,20 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
     │       ├── index.js     # Bootstrap (MongoDB + HTTP + Socket.io + MQTT)
     │       ├── config/      # Configuração centralizada
     │       ├── middleware/  # errorHandler (com contratos estruturados), requestLogger, validate
-    │       ├── models/      # Reading.js, Alert.js (Mongoose)
-    │       ├── repositories/# readingRepository.js, alertRepository.js (abstração do Mongoose)
+    │       ├── models/      # Reading.js, Alert.js, ProcessedMessage.js (Mongoose)
+    │       ├── repositories/# readingRepository.js, alertRepository.js, processedMessageRepository.js
     │       ├── routes/      # readings, sensors, alerts, health, metrics (com envelopes de resposta)
-    │       ├── services/    # mqttService, alertService, metricsService, readingService
+    │       ├── services/    # mqttService, telemetryPayload, telemetryProcessor, alertService, metricsService, readingService
     │       ├── strategies/  # thresholdStrategy.js
     │       ├── utils/       # logger.js, responseFormatter.js, thresholds.js
     │       └── websocket/   # socketServer.js
     ├── simulator/           # Node.js ESM simulator
     │   └── src/
-    │       ├── index.js     # Main loop
-    │       ├── config.js    # Configuração
-    │       └── sensors/     # temperatureSensor, pressureSensor, humiditySensor, vibrationSensor
+    │       ├── index.js     # Bootstrap e lifecycle
+    │       ├── config.js    # Configuração e seleção de transporte
+    │       ├── simulator.js # Loop de publicação
+    │       ├── publishers/  # publisher local MQTT e fábrica por transporte
+    │       └── sensors/     # fábrica e temperatureSensor, pressureSensor, humiditySensor, vibrationSensor
     ├── dashboard/           # Vue 3 SPA
     │   └── src/
     │       ├── App.vue      # Raiz (injeta ToastNotification globalmente)
@@ -259,9 +265,19 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 | HUMIDITY_CRITICAL_THRESHOLD | 90 | Threshold critical umidade (%) |
 | VIBRATION_WARN_THRESHOLD | 4.5 | Threshold warning vibração (mm/s) |
 | VIBRATION_CRITICAL_THRESHOLD | 6.0 | Threshold critical vibração (mm/s) |
+| TELEMETRY_TRANSPORT | local | Transporte de telemetria (`local` ou `azure`) |
 | SIMULATOR_INTERVAL_MS | 2000 | Intervalo de publicação (ms) |
 | SIMULATOR_SENSORS_COUNT | 8 | Quantidade total de sensores |
 | SIMULATOR_ANOMALY_PROBABILITY | 0.05 | Probabilidade de anomalia |
+| AZURE_IOT_HUB_DEVICE_CONNECTION_STRING | — | Connection string do dispositivo gateway (desenvolvimento) |
+| AZURE_IOT_HUB_DEVICE_CONNECTION_STRING_FILE | — | Arquivo do secret da connection string (produção) |
+| AZURE_IOT_HUB_DEVICE_ID | simulator-gateway | Identidade lógica do gateway |
+| AZURE_DAILY_MESSAGE_BUDGET | 8000 | Limite diário estimado de mensagens |
+| AZURE_ALLOW_OVERAGE | false | Permite exceder o orçamento com opt-in explícito |
+| AZURE_EVENT_HUB_CONNECTION_STRING | — | Connection string do consumidor Event Hubs (desenvolvimento) |
+| AZURE_EVENT_HUB_CONNECTION_STRING_FILE | — | Arquivo do secret do consumidor Event Hubs (produção) |
+| AZURE_EVENT_HUB_NAME | — | Nome do Event Hub interno do IoT Hub |
+| AZURE_EVENT_HUB_CONSUMER_GROUP | $Default | Consumer group da API |
 | LOG_LEVEL | info | Nível de log Winston |
 | METRICS_ENABLED | true | Habilitar métricas Prometheus |
 | METRICS_PORT | 9090 | Porta métricas Prometheus |
@@ -279,7 +295,7 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 
 | Método | Rota | Descrição |
 |---|---|---|
-| GET | /health | Health check |
+| GET | /health | Health check; inclui `transport` e status de `mqtt`/`azureEventHubs` |
 | GET | /metrics | Métricas Prometheus |
 | GET | /api/v1/readings | Leituras paginadas com filtros |
 | GET | /api/v1/readings/latest | Última leitura por sensor |
@@ -355,6 +371,22 @@ Veja `.env.example` para lista completa. Variáveis críticas:
   resolvedAt: Date,
   timestamp:  Date (indexed)
 }
+// Índice único parcial: { sensorId: 1, level: 1 } quando resolved=false
+```
+
+### ProcessedMessage
+```js
+{
+  _id:        String (determinístico: `${source}:${messageId}`),
+  source:     String (required),
+  sensorId:   String,
+  status:     enum['processing','processed'] (required),
+  claimedAt:  Date (required),
+  leaseUntil: Date (required durante processing),
+  processedAt:Date,
+  expiresAt:  Date (required, TTL de 7 dias)
+}
+// Claim atômico com lease de 60s; replay concluído é descartado
 ```
 
 ---

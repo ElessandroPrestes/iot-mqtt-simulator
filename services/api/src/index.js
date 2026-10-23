@@ -7,13 +7,18 @@ const { createApp } = require('./app');
 const { createSocketServer } = require('./websocket/socketServer');
 const { loadSecurityConfig } = require('./config/security');
 const { loadRuntimeConfig } = require('./config/runtime');
-const mqttService = require('./services/mqttService');
+const { createIngress } = require('./ingress/createIngress');
+const {
+  configureTransport,
+  setAzureIngressStatus,
+} = require('./ingress/status');
 const logger = require('./utils/logger');
 const { installFatalProcessHandlers } = require('./utils/processLifecycle');
 
 async function bootstrap() {
   const securityConfig = loadSecurityConfig();
   const runtimeConfig = loadRuntimeConfig();
+  configureTransport(runtimeConfig.transport);
 
   // MongoDB
   await mongoose.connect(runtimeConfig.mongo.uri, {
@@ -25,7 +30,7 @@ async function bootstrap() {
           secureContext: tls.createSecureContext({
             ...runtimeConfig.mongo.tls,
             minVersion: 'TLSv1.2',
-            ciphers: runtimeConfig.mqtt.ciphers,
+            ciphers: runtimeConfig.apiTls.ciphers,
           }),
         }
       : {}),
@@ -41,8 +46,14 @@ async function bootstrap() {
   // Socket.io
   const io = createSocketServer(server, securityConfig);
 
-  // MQTT Processor
-  const mqttClient = mqttService.init(io, runtimeConfig.mqtt);
+  // Telemetry ingress
+  const ingress = createIngress(runtimeConfig.transport, { io });
+  if (runtimeConfig.transport === 'azure') {
+    setAzureIngressStatus({ connected: false, status: 'initializing' });
+    await ingress.start(runtimeConfig.azure);
+  } else {
+    ingress.start(io, runtimeConfig.mqtt);
+  }
 
   // Start
   const port = runtimeConfig.apiPort;
@@ -54,16 +65,13 @@ async function bootstrap() {
     shuttingDown = true;
     logger.info(`Received ${signal}. Shutting down...`);
 
-    const closeMqtt = new Promise((resolve) => {
-      mqttClient.end(false, {}, resolve);
-    });
     const closeHttp = new Promise((resolve) => {
       if (!server.listening) return resolve();
       return server.close(resolve);
     });
 
     await Promise.allSettled([
-      closeMqtt,
+      ingress.stop(),
       closeHttp,
       mongoose.disconnect(),
     ]);
@@ -73,7 +81,7 @@ async function bootstrap() {
   process.on('SIGINT',  () => shutdown('SIGINT'));
   installFatalProcessHandlers(shutdown);
 
-  return { app, io, mqttClient, server, shutdown };
+  return { app, ingress, io, server, shutdown };
 }
 
 if (require.main === module) {

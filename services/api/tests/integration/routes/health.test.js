@@ -1,5 +1,9 @@
 const request  = require('supertest');
 const mqttService = require('../../../src/services/mqttService');
+const {
+  configureTransport,
+  setAzureIngressStatus,
+} = require('../../../src/ingress/status');
 const { createApp } = require('../../../src/app');
 
 let app;
@@ -8,6 +12,8 @@ beforeAll(() => { app = createApp(); });
 
 describe('GET /health', () => {
   beforeEach(() => {
+    configureTransport('local');
+    setAzureIngressStatus({ connected: false, status: 'disabled' });
     jest.spyOn(mqttService, 'getStatus').mockReturnValue({
       connected: true,
       status: 'connected',
@@ -57,5 +63,42 @@ describe('GET /health', () => {
     expect(res.status).toBe(503);
     expect(res.body.data.status).toBe('degraded');
     expect(res.body.data.services.mqtt.status).toBe('reconnecting');
+  });
+
+  it('mantém o contrato local com azureEventHubs desabilitado', async () => {
+    const res = await request(app).get('/health');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.transport).toBe('local');
+    expect(res.body.data.services.mqtt.status).toBe('connected');
+    expect(res.body.data.services.azureEventHubs.status).toBe('disabled');
+  });
+
+  it('fica saudável no modo Azure sem MQTT conectado', async () => {
+    configureTransport('azure');
+    setAzureIngressStatus({ connected: true, status: 'connected' });
+    mqttService.getStatus.mockReturnValueOnce({
+      connected: false,
+      status: 'uninitialized',
+    });
+
+    const res = await request(app).get('/health');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('healthy');
+    expect(res.body.data.transport).toBe('azure');
+    expect(res.body.data.services.mqtt.status).toBe('disabled');
+    expect(res.body.data.services.azureEventHubs.status).toBe('connected');
+  });
+
+  it('fica degradado quando o ingress Azure está desconectado', async () => {
+    configureTransport('azure');
+    setAzureIngressStatus({ connected: false, status: 'error' });
+
+    const res = await request(app).get('/health');
+
+    expect(res.status).toBe(503);
+    expect(res.body.data.status).toBe('degraded');
+    expect(res.body.data.services.azureEventHubs.status).toBe('error');
   });
 });

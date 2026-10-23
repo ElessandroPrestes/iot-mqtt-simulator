@@ -45,7 +45,10 @@ implementação:
 - ampliação da cobertura automatizada do dashboard;
 - autenticação no MongoDB em desenvolvimento;
 - auditoria WCAG completa e verificação automatizada de acessibilidade;
-- suporte a `prefers-reduced-motion` no dashboard.
+- suporte a `prefers-reduced-motion` no dashboard;
+- integração opcional com Azure IoT Hub, aprovada na `SPEC-009` e no
+  `ADR-008`; em implementação, com as `TASK-009-01` a `TASK-009-04`
+  concluídas.
 
 ## Fora do escopo atual
 

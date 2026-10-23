@@ -4,7 +4,8 @@ function sanitizeString(value) {
   return value
     .replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [REDACTED]')
     .replace(/\b(https?:\/\/|mongodb(?:\+srv)?:\/\/)([^:\s/@]+):([^@\s/]+)@/gi, '$1$2:[REDACTED]@')
-    .replace(/\b(password|token|secret)=([^&\s]+)/gi, '$1=[REDACTED]')
+    .replace(/\b(password|token|secret|sig|sas)=([^&\s]+)/gi, '$1=[REDACTED]')
+    .replace(/\b(SharedAccessKey|SharedAccessSignature|AccountKey)=([^;\s]+)/gi, '$1=[REDACTED]')
     .replace(/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, '[REDACTED]');
 }
 

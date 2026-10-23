@@ -9,8 +9,10 @@
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
   "dependencies": {
-    "mqtt": "^5.3.4",
-    "dotenv": "^16.4.5"
+    "azure-iot-device": "1.18.4",
+    "azure-iot-device-mqtt": "1.16.4",
+    "dotenv": "^16.4.5",
+    "mqtt": "^5.3.4"
   },
   "devDependencies": {
     "jest": "^29.7.0"

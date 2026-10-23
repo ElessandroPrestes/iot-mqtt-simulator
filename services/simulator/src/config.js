@@ -24,8 +24,53 @@ function requiredFile(env, name) {
   return value;
 }
 
+const TRANSPORTS = new Set(['local', 'azure']);
+
+function parseTransport(env) {
+  const value = (env.TELEMETRY_TRANSPORT || 'local').trim().toLowerCase();
+  if (!TRANSPORTS.has(value)) {
+    throw new Error('TELEMETRY_TRANSPORT must be "local" or "azure"');
+  }
+  return value;
+}
+
+function positiveInteger(env, name, fallback, { min = 1, max = 1_000_000_000 } = {}) {
+  const raw = env[name];
+  if (raw === undefined || raw === '') return fallback;
+
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < min || value > max) {
+    throw new Error(`${name} must be an integer between ${min} and ${max}`);
+  }
+  return value;
+}
+
+function probability(env, name, fallback) {
+  const raw = env[name];
+  if (raw === undefined || raw === '') return fallback;
+
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0 || value > 1) {
+    throw new Error(`${name} must be a number between 0 and 1`);
+  }
+  return value;
+}
+
+function boolean(env, name, fallback) {
+  const raw = env[name];
+  if (raw === undefined || raw === '') return fallback;
+
+  const value = raw.trim().toLowerCase();
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+
+  throw new Error(`${name} must be "true" or "false"`);
+}
+
 export function loadConfig(env = process.env) {
   const production = env.NODE_ENV === 'production';
+  const transport = parseTransport(env);
+
   if (production && [
     'MQTT_USERNAME',
     'MQTT_PASSWORD',
@@ -35,14 +80,15 @@ export function loadConfig(env = process.env) {
     throw new Error('MQTT password credentials are not allowed in production; use mTLS');
   }
 
+  const useLocalTls = production && transport === 'local';
   const mqtt = {
     host: env.MQTT_BROKER_HOST || 'localhost',
-    port: Number.parseInt(env.MQTT_BROKER_PORT, 10) || (production ? 8883 : 1883),
+    port: Number.parseInt(env.MQTT_BROKER_PORT, 10) || (useLocalTls ? 8883 : 1883),
     clientId: env.MQTT_CLIENT_ID_SIM || `simulator-${Date.now()}`,
-    protocol: production ? 'mqtts' : 'mqtt',
+    protocol: useLocalTls ? 'mqtts' : 'mqtt',
   };
 
-  if (production) {
+  if (useLocalTls) {
     Object.assign(mqtt, {
       ca: requiredFile(env, 'INTERNAL_CA'),
       cert: requiredFile(env, 'SIMULATOR_CLIENT_CERT'),
@@ -55,12 +101,32 @@ export function loadConfig(env = process.env) {
     mqtt.password = secretValue(env, 'MQTT_PASSWORD');
   }
 
+  const azureEnabled = transport === 'azure';
+  const azure = {
+    connectionString: azureEnabled
+      ? secretValue(env, 'AZURE_IOT_HUB_DEVICE_CONNECTION_STRING')
+      : undefined,
+    deviceId: env.AZURE_IOT_HUB_DEVICE_ID || 'simulator-gateway',
+    dailyMessageBudget: azureEnabled
+      ? positiveInteger(env, 'AZURE_DAILY_MESSAGE_BUDGET', 8000)
+      : 8000,
+    allowOverage: azureEnabled ? boolean(env, 'AZURE_ALLOW_OVERAGE', false) : false,
+  };
+
+  if (azureEnabled && !azure.connectionString) {
+    throw new Error(
+      'AZURE_IOT_HUB_DEVICE_CONNECTION_STRING or AZURE_IOT_HUB_DEVICE_CONNECTION_STRING_FILE is required when TELEMETRY_TRANSPORT=azure'
+    );
+  }
+
   return {
+    transport,
     mqtt,
+    azure,
     simulator: {
-      intervalMs: Number.parseInt(env.SIMULATOR_INTERVAL_MS, 10) || 2000,
-      sensorsCount: Number.parseInt(env.SIMULATOR_SENSORS_COUNT, 10) || 8,
-      anomalyProbability: Number.parseFloat(env.SIMULATOR_ANOMALY_PROBABILITY) || 0.05,
+      intervalMs: positiveInteger(env, 'SIMULATOR_INTERVAL_MS', 2000),
+      sensorsCount: positiveInteger(env, 'SIMULATOR_SENSORS_COUNT', 8, { max: 100_000 }),
+      anomalyProbability: probability(env, 'SIMULATOR_ANOMALY_PROBABILITY', 0.05),
     },
     topics: {
       temperature: 'factory/sensors/temperature',

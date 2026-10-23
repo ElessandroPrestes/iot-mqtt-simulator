@@ -14,6 +14,20 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 - `CODE_OF_CONDUCT.md` com as regras de convivência do projeto.
 - `knowledge/INDEX.md` com o índice de recuperação seletiva da Base de Conhecimento.
 - Seções de UX/UI, design system, acessibilidade e quality gates no `PROJECT.md`.
+- Seleção `TELEMETRY_TRANSPORT` no simulador, com modo `local` como padrão.
+- Abstração de publisher e `LocalMqttPublisher` no simulador.
+- Fábrica determinística de sensores e lifecycle de publicação testável.
+- `AzureIotHubPublisher` opcional com connection string/SAS, `messageId`,
+  content type/encoding e propriedades de roteamento.
+- Guarda de custo `AZURE_DAILY_MESSAGE_BUDGET` / `AZURE_ALLOW_OVERAGE`.
+- Redaction de segredos nos loggers do simulador e da API.
+- Pipeline compartilhado `telemetryPayload`/`telemetryProcessor` na API.
+- Deduplicação durável de mensagens Azure em `ProcessedMessage`.
+- Índice único parcial de alertas ativos e migração idempotente de duplicados.
+- Ingress Azure Event Hubs na API, com seleção por `TELEMETRY_TRANSPORT`.
+- Health aditivo por transporte e métricas de recebimento, rejeição, latência,
+  reconexão e falha do ingress.
+- Overlay `docker-compose.azure.yml` opcional, sem alterar o compose local.
 
 ### Changed
 
@@ -57,6 +71,10 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Fixed
 
+- `SIMULATOR_SENSORS_COUNT` agora representa o total real de sensores; o padrão
+  de 8 deixa de criar 16 sensores.
+- O intervalo de publicação do simulador não é mais duplicado após reconexão.
+- O simulador encerra o intervalo e o publisher em `SIGTERM`/`SIGINT`.
 - Rota `readings` usando `readingService` corretamente (TASK-002).
 - Stores Pinia sem duplo `.data` no interceptor Axios (TASK-003).
 - Testes validando o contrato de resposta da API (TASK-004).

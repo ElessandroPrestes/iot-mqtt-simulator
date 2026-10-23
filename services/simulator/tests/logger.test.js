@@ -56,4 +56,27 @@ describe('structured simulator logger', () => {
     expect(entry.message).toBe('Canonical message');
     expect(entry.timestamp).not.toBe('forged');
   });
+
+  it('redacts secrets from metadata and nested values', () => {
+    delete process.env.LOG_FILE;
+    const output = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    logger.info('Azure configured', {
+      connectionString:
+        'HostName=test.azure-devices.net;DeviceId=simulator-gateway;SharedAccessKey=secret',
+      nested: {
+        sharedAccessKey: 'secret',
+        password: 'secret',
+        safe: 'visible',
+      },
+      error: 'connect failed SharedAccessKey=secret;',
+    });
+
+    const entry = JSON.parse(output.mock.calls[0][0]);
+    expect(entry.connectionString).toBe('[REDACTED]');
+    expect(entry.nested.sharedAccessKey).toBe('[REDACTED]');
+    expect(entry.nested.password).toBe('[REDACTED]');
+    expect(entry.nested.safe).toBe('visible');
+    expect(entry.error).toBe('connect failed SharedAccessKey=[REDACTED];');
+  });
 });

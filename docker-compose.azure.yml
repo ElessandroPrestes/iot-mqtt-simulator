@@ -1,0 +1,21 @@
+# Overlay opcional para executar a stack com Azure IoT Hub.
+# Uso: docker compose -f docker-compose.yml -f docker-compose.azure.yml up -d
+# O compose local permanece inalterado; o broker é iniciado, mas não é usado
+# como transporte de telemetria neste perfil.
+services:
+  api:
+    environment:
+      TELEMETRY_TRANSPORT: azure
+      AZURE_EVENT_HUB_CONNECTION_STRING: ${AZURE_EVENT_HUB_CONNECTION_STRING:-}
+      AZURE_EVENT_HUB_CONNECTION_STRING_FILE: ${AZURE_EVENT_HUB_CONNECTION_STRING_FILE:-}
+      AZURE_EVENT_HUB_NAME: ${AZURE_EVENT_HUB_NAME:-}
+      AZURE_EVENT_HUB_CONSUMER_GROUP: ${AZURE_EVENT_HUB_CONSUMER_GROUP:-}
+
+  simulator:
+    environment:
+      TELEMETRY_TRANSPORT: azure
+      AZURE_IOT_HUB_DEVICE_CONNECTION_STRING: ${AZURE_IOT_HUB_DEVICE_CONNECTION_STRING:-}
+      AZURE_IOT_HUB_DEVICE_CONNECTION_STRING_FILE: ${AZURE_IOT_HUB_DEVICE_CONNECTION_STRING_FILE:-}
+      AZURE_IOT_HUB_DEVICE_ID: ${AZURE_IOT_HUB_DEVICE_ID:-simulator-gateway}
+      AZURE_DAILY_MESSAGE_BUDGET: ${AZURE_DAILY_MESSAGE_BUDGET:-8000}
+      AZURE_ALLOW_OVERAGE: ${AZURE_ALLOW_OVERAGE:-false}

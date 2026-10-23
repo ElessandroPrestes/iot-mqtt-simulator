@@ -16,4 +16,13 @@ const alertSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+alertSchema.index(
+  { sensorId: 1, level: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { resolved: false },
+    name: 'uniq_active_alert_per_sensor_level',
+  }
+);
+
 module.exports = mongoose.model('Alert', alertSchema);

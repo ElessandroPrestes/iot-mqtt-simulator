@@ -1,5 +1,6 @@
 const Joi = require('joi');
 const { readSecretFile } = require('./security');
+const { loadTelemetryConfig } = require('./azure');
 
 const APPROVED_TLS_CIPHERS = [
   'TLS_AES_256_GCM_SHA384',
@@ -16,6 +17,8 @@ function secretValue(env, name) {
 function loadRuntimeConfig(env = process.env) {
   const environment = env.NODE_ENV || 'development';
   const production = environment === 'production';
+  const telemetry = loadTelemetryConfig(env);
+  const local = telemetry.transport === 'local';
 
   if (production) {
     for (const name of [
@@ -50,15 +53,21 @@ function loadRuntimeConfig(env = process.env) {
     apiPort: Joi.number().integer().min(1024).max(65535).required(),
     mongoUri: Joi.string().uri({ scheme: ['mongodb', 'mongodb+srv'] }).required(),
     mongoDbName: Joi.string().pattern(/^[a-zA-Z0-9_-]{1,64}$/).required(),
-    mqttHost: Joi.string().hostname().required(),
+    mqttHost: local ? Joi.string().hostname().required() : Joi.optional(),
     mqttPort: Joi.number().integer().min(1).max(65535).required(),
     mqttUsername: production
       ? Joi.forbidden()
-      : Joi.string().min(1).max(128).required(),
+      : local
+        ? Joi.string().min(1).max(128).required()
+        : Joi.optional(),
     mqttPassword: production
       ? Joi.forbidden()
-      : Joi.string().min(1).max(512).required(),
-    mqttClientId: Joi.string().pattern(/^[a-zA-Z0-9_-]{3,64}$/).required(),
+      : local
+        ? Joi.string().min(1).max(512).required()
+        : Joi.optional(),
+    mqttClientId: local
+      ? Joi.string().pattern(/^[a-zA-Z0-9_-]{3,64}$/).required()
+      : Joi.optional(),
     internalCa: production ? Joi.string().min(1).required() : Joi.optional(),
     apiClientCert: production ? Joi.string().min(1).required() : Joi.optional(),
     apiClientKey: production ? Joi.string().min(1).required() : Joi.optional(),
@@ -93,28 +102,33 @@ function loadRuntimeConfig(env = process.env) {
   return Object.freeze({
     environment,
     production,
+    transport: telemetry.transport,
     apiPort: value.apiPort,
     mongo: {
       uri: value.mongoUri,
       dbName: value.mongoDbName,
       ...(production ? { tls: workloadTls } : {}),
     },
-    mqtt: {
-      host: value.mqttHost,
-      port: value.mqttPort,
-      clientId: value.mqttClientId,
-      protocol: production ? 'mqtts' : 'mqtt',
-      ...(production
-        ? {
-            ...workloadTls,
-            rejectUnauthorized: true,
-            ciphers: APPROVED_TLS_CIPHERS,
-          }
-        : {
-            username: value.mqttUsername,
-            password: value.mqttPassword,
-          }),
-    },
+    ...(local
+      ? {
+          mqtt: {
+            host: value.mqttHost,
+            port: value.mqttPort,
+            clientId: value.mqttClientId,
+            protocol: production ? 'mqtts' : 'mqtt',
+            ...(production
+              ? {
+                  ...workloadTls,
+                  rejectUnauthorized: true,
+                  ciphers: APPROVED_TLS_CIPHERS,
+                }
+              : {
+                  username: value.mqttUsername,
+                  password: value.mqttPassword,
+                }),
+          },
+        }
+      : { azure: telemetry.eventHub }),
     ...(production
       ? {
           apiTls: {
