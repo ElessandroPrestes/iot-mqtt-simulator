@@ -13,7 +13,7 @@ from typing import Iterable, Sequence
 
 
 SPEC_PATTERN = re.compile(r"\bSPEC-\d{3}(?:-v\d+)?\b")
-TASK_PATTERN = re.compile(r"\bTASK-\d{3}-\d{2}\b")
+TASK_PATTERN = re.compile(r"\bTASK-\d{3}(?:-\d{2})?\b")
 METADATA_ROW = re.compile(r"^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*$", re.MULTILINE)
 
 
@@ -63,6 +63,40 @@ def first_identifier(pattern: re.Pattern[str], content: str) -> str | None:
     return match.group(0) if match else None
 
 
+STATUS_HEADING = re.compile(r"^##\s+Status\s*$", re.MULTILINE | re.IGNORECASE)
+RESULT_LINE = re.compile(r"^\*\*Resultado:\*\*\s*(.+)$", re.MULTILINE | re.IGNORECASE)
+CHECKBOX = re.compile(r"^[-*]\s*\[([xX ])\]\s*(.+)$")
+
+
+def clean_status(value: str) -> str:
+    return re.sub(r"^[^\w]+", "", value).replace("**", "").strip()
+
+
+def status_value(content: str) -> str:
+    value = metadata_value(content, ("Status", "Estado"))
+    if value != "Not recorded":
+        return clean_status(value)
+    result = RESULT_LINE.search(content)
+    if result:
+        return clean_status(result.group(1))
+    match = STATUS_HEADING.search(content)
+    if not match:
+        return "Not recorded"
+    for line in content[match.end():].splitlines():
+        stripped = line.strip()
+        if not stripped or stripped == "---":
+            continue
+        if stripped.startswith("#"):
+            break
+        checkbox = CHECKBOX.match(stripped)
+        if checkbox:
+            if checkbox.group(1).strip().lower() != "x":
+                continue
+            stripped = checkbox.group(2)
+        return clean_status(stripped) or "Not recorded"
+    return "Not recorded"
+
+
 def collect_artifacts(directory: Path, pattern: re.Pattern[str], kind: str) -> list[Artifact]:
     artifacts = []
     for path in markdown_files(directory):
@@ -76,7 +110,7 @@ def collect_artifacts(directory: Path, pattern: re.Pattern[str], kind: str) -> l
         artifacts.append(
             Artifact(
                 identifier=identifier,
-                status=metadata_value(content, ("Status", "Estado")),
+                status=status_value(content),
                 path=path,
                 references=references,
             )

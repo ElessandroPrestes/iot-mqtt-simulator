@@ -21,8 +21,15 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   snapshot pré-1.0.
 - `README.md` atualizado com o índice da documentação do framework.
 - Matriz de rastreabilidade regenerada a partir dos artefatos reais do repositório.
+- Informações de riscos e limitações reclassificadas no `PROJECT.md`.
+- Gerador de rastreabilidade compatível com `TASK-NNN` histórico e
+  `TASK-NNN-XX` canônico.
 
-## [1.0.0] - 2026-07-27
+## [1.0.0] - Não publicado (escopo local)
+
+> Versão de produto concluída e aprovada apenas para execução local. Não houve
+> tag `v1.0.0`, merge em `main` ou release público; a `TASK-013` permanece fora
+> do escopo local aprovado.
 
 ### Added
 

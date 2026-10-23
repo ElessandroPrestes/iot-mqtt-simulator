@@ -14,7 +14,12 @@ Ela complementa, em vez de substituir, a aprovação humana e as evidências de 
 | Tarefa (TASK) | `TASK-NNN-XX` | `TASK-042-01` | Reutilize o número base de três dígitos da SPEC; incremente a sequência da tarefa de dois dígitos. |
 | Decisão de arquitetura (ADR) | `ADR-NNN` | `ADR-017` | Use a próxima sequência de três dígitos não utilizada em `adr/`. |
 
-Identificadores são imutáveis depois que um artefato é compartilhado para revisão. Não reutilize um identificador de um artefato substituído, rejeitado ou excluído. Uma alteração de SPEC faz referência a seu predecessor e é um artefato de aprovação separado; suas tarefas usam o identificador da SPEC alterada em seus campos `Refs:`.
+Identificadores são imutáveis depois que um artefato é compartilhado para revisão. Não reutilize um identificador de um artefato substituído, rejeitado ou excluído.
+
+**Compatibilidade histórica:** tarefas criadas antes da adoção do formato canônico
+usam `TASK-NNN` (por exemplo, `TASK-014`). Elas continuam válidas para leitura e
+rastreabilidade; novas tarefas DEVEM usar `TASK-NNN-XX`. O gerador reconhece os
+dois formatos, mas não infere vínculos ausentes. Uma alteração de SPEC faz referência a seu predecessor e é um artefato de aprovação separado; suas tarefas usam o identificador da SPEC alterada em seus campos `Refs:`.
 
 ## Ciclo de vida da alteração de SPEC
 
@@ -64,6 +69,6 @@ Gere a matriz do repositório a partir de sua raiz com:
 python3 scripts/generate_traceability.py
 ```
 
-A saída padrão (default) é `docs/traceability-matrix.md`. Ela lista cada SPEC descoberta, TAREFAS vinculadas, commits cujos trailers referenciam a SPEC ou a TAREFA vinculada, e registros vinculados de QA/revisão. Ela também lista lacunas, como uma TAREFA sem uma SPEC existente ou uma SPEC sem uma referência de TAREFA ou commit. O gerador lê apenas as pastas `specs/`, `tasks/`, `reviews/` e o histórico do Git; ele não edita os artefatos de origem nem o histórico do Git. Use `--output <path>` para escrever uma matriz diferente.
+A saída padrão (default) é `docs/traceability-matrix.md`. Ela lista cada SPEC descoberta, TAREFAS vinculadas (nos formatos `TASK-NNN` e `TASK-NNN-XX`), commits cujos trailers referenciam a SPEC ou a TAREFA vinculada, e registros vinculados de QA/revisão. Ela também lista lacunas, como uma TAREFA sem uma SPEC existente ou uma SPEC sem uma referência de TAREFA ou commit. O gerador lê apenas as pastas `specs/`, `tasks/`, `reviews/` e o histórico do Git; ele não edita os artefatos de origem nem o histórico do Git. Use `--output <path>` para escrever uma matriz diferente.
 
 Markdown é o formato padrão porque pode ser revisado em qualquer repositório. O script de origem contém as regras de extração determinísticas, para que os adotantes possam converter o resultado em outro formato de relatório sem alterar os registros de origem.

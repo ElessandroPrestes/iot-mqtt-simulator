@@ -7,11 +7,11 @@
 
 | Área | Estado | Evidência |
 |---|---|---|
-| Produto | v1.0.0 concluída no escopo local | `PROJECT.md`, `CHANGELOG.md` |
+| Produto | v1.0.0 concluída no escopo local; sem tag ou release público | `PROJECT.md`, `CHANGELOG.md` |
 | Framework SDD | Snapshot pré-1.0 de 2026-10-23 | `UNIVERSAL_SDD_FRAMEWORK.md` |
 | Documentação | Estrutura e módulos do framework presentes | `docs/` |
 | Padrões | UX/UI, design system, acessibilidade, testes e quality gates | `standards/` |
-| Rastreabilidade | Gerador e matriz disponíveis | `scripts/generate_traceability.py`, `docs/traceability-matrix.md` |
+| Rastreabilidade | Gerador compatível com `TASK-NNN` e `TASK-NNN-XX`; lacunas reais listadas | `scripts/generate_traceability.py`, `docs/traceability-matrix.md` |
 | Segurança | Baseline OWASP ASVS Level 2 no escopo local | `standards/security.md`, `specs/SPEC-006-owasp-security-hardening.md` |
 | CI | Pipeline de qualidade e segurança | `.github/workflows/ci.yml` |
 
@@ -29,8 +29,8 @@
 ### Em manutenção
 
 - Alinhamento contínuo entre `PROJECT.md`, código e evidências de QA.
-- Compatibilidade dos identificadores históricos com o formato
-  `TASK-NNN-XX` usado pelo gerador de rastreabilidade.
+- Correção das lacunas históricas reais: tarefas sem SPEC explícita ou sem
+  trailer `Task-Ref`.
 - Revisão dos documentos do framework a cada novo snapshot pré-1.0.
 
 ### Candidatos a mudança
@@ -43,11 +43,14 @@ implementação:
 - thresholds por sensor individual;
 - retry persistente para mensagens MQTT perdidas;
 - ampliação da cobertura automatizada do dashboard;
-- autenticação no MongoDB em desenvolvimento.
+- autenticação no MongoDB em desenvolvimento;
+- auditoria WCAG completa e verificação automatizada de acessibilidade;
+- suporte a `prefers-reduced-motion` no dashboard.
 
 ## Fora do escopo atual
 
 - deploy público ou remoto;
+- tag `v1.0.0`, release público e merge em `main`;
 - AWS IoT Core;
 - GitHub Actions CD;
 - Kubernetes;

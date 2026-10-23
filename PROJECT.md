@@ -458,17 +458,26 @@ respeitem `maxConcurrentSessions` mesmo sob requisições paralelas
 
 ---
 
-## 15. Limitações Conhecidas
+## 15. Riscos e Limitações Conhecidas
 
-- MongoDB sem autenticação em dev (risco se porta 27017 exposta)
-- Sem retry persistente para mensagens MQTT perdidas
-- Sem paginação cursor-based (somente offset)
-- Thresholds globais por tipo (não por sensor individual)
-- AWS IoT Core não implementado e fora do escopo local
-- GitHub Actions CD não implementado e fora do escopo aprovado
-- Sem deploy público/remoto por decisão de escopo
-- Cobertura ampla do Dashboard permanece abaixo dos thresholds auxiliares do
-  Vitest; o gate canônico atual é `npm test` + `npm run build`
+Classificação: **produto** (comportamento atual), **escopo** (decisão aprovada) e
+**qualidade/dívida documental**. Nenhum item abaixo autoriza mudança fora de uma
+SPEC e TASK aprovadas.
+
+| Limitação | Tipo | Impacto | Escopo/estado | Tratamento ou próximo passo |
+|---|---|---|---|---|
+| MongoDB sem autenticação no compose de desenvolvimento | Produto/segurança | Leitura ou escrita indevida se a porta `27017` for exposta | Apenas desenvolvimento; o perfil local seguro usa TLS + `MONGODB-X509` e não publica a porta | Manter a porta não publicada e usar `make local-secure-up`; autenticação no compose de dev exige SPEC |
+| Sem retry persistente para mensagens MQTT perdidas | Produto | Perda de leituras durante desconexão do broker | Escopo local | Avaliar fila/retry em SPEC futura e monitorar reconexões |
+| Sem paginação cursor-based | Produto | Custo e latência maiores em volumes altos | Paginação por offset | SPEC futura, se o volume justificar |
+| Thresholds globais por tipo de sensor | Produto | Não há limite individual por sensor | Configuração por tipo | SPEC futura para thresholds por sensor |
+| Auditoria WCAG completa ausente | Qualidade | Barreiras de acessibilidade podem não ser detectadas | Baseline parcial em `standards/accessibility.md` | SPEC de acessibilidade com auditoria e verificação no CI |
+| `prefers-reduced-motion` não implementado | Qualidade | Desconforto para usuários sensíveis a movimento | Dashboard | Incluir na SPEC de acessibilidade |
+| Cobertura ampla do Dashboard abaixo dos thresholds auxiliares do Vitest | Qualidade | Menor proteção contra regressões no frontend | Gate canônico é `npm test` + `npm run build` | Ampliar cobertura em SPEC futura |
+| Rastreabilidade histórica incompleta | Dívida documental | Tarefas antigas sem trailer `Task-Ref` ou sem SPEC explícita | Gerador reconhece `TASK-NNN` e `TASK-NNN-XX`; lacunas reais permanecem listadas | Corrigir artefatos históricos apenas em mudança aprovada; novas tarefas usam `TASK-NNN-XX` |
+| Release público, tag `v1.0.0` e merge em `main` não executados | Escopo | Não existe artefato de release publicado | `TASK-013` fora do escopo local aprovado | Novo ciclo SDD com aprovação humana |
+| AWS IoT Core não implementado | Escopo | Sem integração com a nuvem AWS | Fora do escopo local | Novo ciclo SDD, se aprovado |
+| GitHub Actions CD não implementado | Escopo | Sem deploy automatizado | Fora do escopo aprovado | Novo ciclo SDD, se aprovado |
+| Sem deploy público/remoto | Escopo | Sem exposição externa | Decisão de escopo local | Novo ciclo com certificado público e gestor externo de secrets |
 
 ---
 
