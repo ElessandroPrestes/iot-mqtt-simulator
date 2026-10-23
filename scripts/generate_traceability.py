@@ -129,6 +129,7 @@ def git_commits(root: Path) -> list[Commit]:
     for record in completed.stdout.split("\x1e"):
         if not record.strip():
             continue
+        record = record.lstrip("\r\n")
         sha, subject, body = record.split("\x1f", maxsplit=2)
         references = tuple(sorted(set(SPEC_PATTERN.findall(body) + TASK_PATTERN.findall(body))))
         commits.append(Commit(sha=sha, subject=subject, references=references))
