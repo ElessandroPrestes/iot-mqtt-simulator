@@ -8,6 +8,8 @@ Plataforma fullstack de simulação e monitoramento IoT industrial em tempo real
 
 Este projeto é gerido rigorosamente através do **Universal SDD Framework (Spec-Driven Development)**, garantindo que o código, a arquitetura e a documentação evoluam em sincronia e sob supervisão contínua, tanto humana quanto de Inteligência Artificial.
 
+> **Framework:** Universal SDD pré-1.0 — snapshot de 2026-10-23. A definição normativa está em [`UNIVERSAL_SDD_FRAMEWORK.md`](UNIVERSAL_SDD_FRAMEWORK.md).
+
 ## 🏭 Caso de Uso Empresarial
 
 O **IoT MQTT Simulator** é uma arquitetura de referência para telemetria industrial (Indústria 4.0).
@@ -49,7 +51,7 @@ graph TD
 ## 🤖 Para Inteligências Artificiais
 
 Se você é uma IA (Claude, Gemini, Copilot, etc.), **PARE AQUI**. 
-Você **deve** ler os arquivos `PROJECT.md` e `AGENTS.md` na raiz deste repositório antes de propor qualquer implementação, analisar arquitetura ou modificar o código. Toda a sua instrução e o estado canônico do projeto residem lá.
+Você **deve** ler os arquivos `PROJECT.md`, `AGENTS.md` e os arquivos de entrada dedicados (`CLAUDE.md`, `GEMINI.md`, `COPILOT.md`) na raiz deste repositório antes de propor qualquer implementação, analisar arquitetura ou modificar o código. Toda a sua instrução, a especificação normativa em `UNIVERSAL_SDD_FRAMEWORK.md` e o estado canônico do projeto residem lá.
 
 ---
 
@@ -234,11 +236,40 @@ Este projeto não aceita desenvolvimento de features diretamente no código sem 
 Qualquer mudança, feature ou refatoração segue este ciclo obrigatório:
 
 1. **Discovery & Architecture:** Mapeamento do impacto. Se houver mudança arquitetural, um `ADR` (Architecture Decision Record) deve ser criado em `adr/`.
-2. **Specification (SPEC):** Escreve-se o comportamento esperado e as regras de negócio em um arquivo `SPEC` na pasta `specs/`, utilizando o template oficial (`templates/SPEC.md`).
+2. **Specification (SPEC):** Escreve-se o comportamento esperado e as regras de negócio em um arquivo `SPEC` na pasta `specs/`, utilizando o template canônico (`templates/SPEC_TEMPLATE.md`).
 3. **Aprovação Humana:** O arquivo SPEC é validado e aprovado.
-4. **Tarefas (TASK):** A SPEC é quebrada em um checklist técnico em `tasks/` (via `templates/TASK.md`).
+4. **Tarefas (TASK):** A SPEC é quebrada em um checklist técnico em `tasks/` (via `templates/TASK_TEMPLATE.md`).
 5. **Implementação & Testes:** Apenas o escopo da TASK aprovada é desenvolvido. Testes (Jest/Vitest) são obrigatórios, mantendo a cobertura acima de 90% (`standards/testing.md`).
 6. **Revisão (REVIEW):** O código é validado através do template de Review contra a SPEC inicial.
 7. **Documentação:** O arquivo `PROJECT.md` é atualizado para refletir o novo estado canônico após o merge.
 
 *Para uma visão completa das pastas, padrões e log de decisões, explore os diretórios estruturais gerados na raiz do projeto.*
+
+### Documentação do framework
+
+| Documento | Objetivo |
+|---|---|
+| [`PROJECT.md`](PROJECT.md) | Estado canônico atual do projeto |
+| [`UNIVERSAL_SDD_FRAMEWORK.md`](UNIVERSAL_SDD_FRAMEWORK.md) | Definição normativa do núcleo |
+| [`AGENTS.md`](AGENTS.md) | Protocolo comum para pessoas e agentes de IA |
+| [`docs/getting-started.md`](docs/getting-started.md) | Primeiros passos |
+| [`docs/architecture.md`](docs/architecture.md) | Arquitetura do framework |
+| [`docs/agents.md`](docs/agents.md) | Papéis e responsabilidades |
+| [`docs/workflows.md`](docs/workflows.md) | Fluxos oficiais |
+| [`docs/knowledge-base.md`](docs/knowledge-base.md) | Base de conhecimento |
+| [`docs/bootstrapping.md`](docs/bootstrapping.md) | Inicialização de novos projetos |
+| [`docs/governance.md`](docs/governance.md) | Regras e governança |
+| [`docs/best-practices.md`](docs/best-practices.md) | Boas práticas |
+| [`docs/faq.md`](docs/faq.md) | Perguntas frequentes |
+| [`docs/context-budget.md`](docs/context-budget.md) | Orçamento de contexto por fase |
+| [`docs/ids-and-traceability.md`](docs/ids-and-traceability.md) | Identificadores e rastreabilidade |
+| [`standards/ux-ui.md`](standards/ux-ui.md) | Processo e critérios de UX/UI |
+| [`standards/design-system.md`](standards/design-system.md) | Tokens, componentes e governança visual |
+| [`standards/accessibility.md`](standards/accessibility.md) | Requisitos de acessibilidade |
+| [`standards/testing.md`](standards/testing.md) | Estratégia de testes e evidências |
+| [`standards/quality-gates.md`](standards/quality-gates.md) | Critérios de entrada, saída e release |
+| [`workflows/feature.md`](workflows/feature.md) | Fluxo completo de uma funcionalidade |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Como contribuir |
+| [`CHANGELOG.md`](CHANGELOG.md) | Histórico de versões |
+| [`ROADMAP.md`](ROADMAP.md) | Evolução planejada |
+| [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | Código de conduta |

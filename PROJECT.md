@@ -16,7 +16,7 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 
 **Status:** Concluído e aprovado no escopo local; CI/CD verde na `main`
 **Versão:** 1.0.0  
-**SDD-Ready:** Sim (bootstrapado em 2026-07-22)
+**SDD-Ready:** Sim (Universal SDD Framework pré-1.0 — snapshot de 2026-10-23)
 
 ---
 
@@ -71,6 +71,7 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
                                    ┌──────────────────────┐
                                    │   Dashboard (Vue3)   │
                                    │   (dashboard:5173)   │
+                                   │   Design: Tailwind   │
                                    └──────────────────────┘
 ```
 
@@ -140,33 +141,34 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 
 ```
 /
-├── PROJECT.md               # Estado canônico do projeto
-├── AGENTS.md                # Instrução para todos os agentes IA
-├── GEMINI.md                # Instrução específica Gemini
-├── CLAUDE.MD                # Instrução específica Claude (existente)
-├── docker-compose.yml       # Ambiente de desenvolvimento
-├── docker-compose.prod.yml  # Ambiente de produção
-├── .env.example             # Template de variáveis de ambiente
-├── .github/workflows/       # CI/CD (a implementar)
-├── agents/                  # Definições dos agentes SDD
-│   ├── workflows/           # Fluxos de trabalho
-│   └── profiles/            # Perfis de projeto
-├── adr/                     # Architecture Decision Records
-├── decisions/               # Decisões de negócio
-├── docs/                    # Documentação adicional
-├── knowledge/               # Base de conhecimento
-│   ├── architecture/
-│   ├── business/
-│   ├── glossary/
-│   ├── integrations/
-│   ├── stack/
-│   ├── patterns/
-│   └── decisions/
-├── reviews/                 # Revisões de implementação
-├── specs/                   # Especificações de features
-├── standards/               # Padrões de desenvolvimento
-├── tasks/                   # Tasks de implementação
-├── templates/               # Templates SDD
+├── README.md                    # Visão geral do projeto e índice do framework
+├── PROJECT.md                   # Estado canônico do projeto
+├── UNIVERSAL_SDD_FRAMEWORK.md   # Definição normativa do núcleo do framework
+├── AGENTS.md                    # Protocolo comum para pessoas e agentes IA
+├── CLAUDE.md                    # Ponto de entrada Claude
+├── GEMINI.md                    # Ponto de entrada Gemini
+├── COPILOT.md                   # Ponto de entrada GitHub Copilot
+├── CONTRIBUTING.md              # Guia de contribuição
+├── CHANGELOG.md                 # Histórico de versões
+├── ROADMAP.md                   # Evolução planejada
+├── CODE_OF_CONDUCT.md           # Código de conduta
+├── docker-compose.yml           # Ambiente de desenvolvimento
+├── docker-compose.prod.yml      # Ambiente de produção
+├── .env.example                 # Template de variáveis de ambiente
+├── .github/workflows/           # CI/CD (GitHub Actions)
+├── workflows/                   # Fluxos canônicos SDD (feature, verification)
+├── profiles/                    # Perfis de projeto (microservice)
+├── agents/                      # Definições dos agentes SDD (15 agentes canônicos)
+├── adr/                         # Architecture Decision Records
+├── decisions/                   # Decisões de negócio
+├── docs/                        # Documentação do framework e segurança/arquitetura
+├── knowledge/                   # Base de conhecimento
+├── reviews/                     # Revisões de implementação
+├── specs/                       # Especificações de features
+├── standards/                   # Padrões (OWASP Top 10, quality gates, acessibilidade, etc.)
+├── tasks/                       # Tasks de implementação
+├── templates/                   # Templates SDD (specs, QA evidence, design, hooks)
+├── scripts/                     # Scripts de automação local, CI e rastreabilidade
 └── services/
     ├── api/                 # Node.js Express API
     │   └── src/
@@ -359,6 +361,7 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 
 ## 10. Segurança
 
+- **Padrão de referência:** [standards/security.md](standards/security.md) alinhado ao OWASP Top 10:2025
 - **MQTT no perfil seguro:** mTLS e ACL por identidade de workload
 - **API:** access JWT curto, refresh rotativo, MFA TOTP, RBAC, Helmet, CORS e
   rate limits por fluxo
@@ -427,6 +430,9 @@ respeitem `maxConcurrentSessions` mesmo sob requisições paralelas
 
 ## 13. Estratégia de Testes
 
+- **Padrão de referência:** [standards/testing.md](standards/testing.md) e [standards/quality-gates.md](standards/quality-gates.md)
+- **QA e Verificação:** Rastreabilidade estruturada de critérios e evidências ([workflows/verification.md](workflows/verification.md))
+
 | Serviço | Framework | Cobertura mínima |
 |---|---|---|
 | api | Jest + supertest + mongodb-memory-server | 90% lines/functions, 85% branches |
@@ -474,3 +480,79 @@ respeitem `maxConcurrentSessions` mesmo sob requisições paralelas
 - **Kafka/RabbitMQ:** MQTT broker suficiente para o escopo
 - **Kubernetes:** Docker Compose suficiente para o escopo atual
 - **ORM SQL:** MongoDB é a escolha para dados de timeseries IoT
+
+---
+
+## 17. Convenções de UX/UI, Design System e Acessibilidade
+
+### Referências
+
+- Processo e critérios de UX/UI: [standards/ux-ui.md](standards/ux-ui.md)
+- Tokens, componentes e governança visual: [standards/design-system.md](standards/design-system.md)
+- Requisitos e validações de acessibilidade: [standards/accessibility.md](standards/accessibility.md)
+
+### Design system implementado
+
+| Elemento | Implementação |
+|---|---|
+| Framework visual | Vue 3 SPA + Tailwind CSS 3.4 |
+| Tokens | `services/dashboard/tailwind.config.js` |
+| Tipografia | Inter (sans) e JetBrains Mono (mono) |
+| Cores base | `bg #0A0E1A`, `card #111827`, `border #1E2D40`, `ink #E2E8F0` |
+| Cores de status | `normal #10B981`, `warning #FFB800`, `critical #FF3B3B`, `accent #00D4FF` |
+| Componentes base | `BaseButton`, `BaseCard`, `ToastNotification`, `MetricBadge`, `LoadingSkeleton`, `ConnectionStatus` |
+| Layout | `AppHeader`, `AppSidebar`, `AppFooter` |
+| Views | Dashboard, Alerts, History, Sensors e Login |
+
+### Convenções de interface
+
+- Tokens e classes utilitárias devem ser reutilizados; valores de cor, sombra e
+  tipografia não devem ser duplicados fora do design system.
+- Estados de carregamento, vazio, erro, desconexão e reconexão devem ser
+  explícitos na interface.
+- Status de sensor usam rótulo textual além da cor (`normal`, `warning`,
+  `critical`).
+- Ações destrutivas ou irreversíveis exigem confirmação ou caminho de desfazer.
+- Novas interfaces exigem discovery, design aprovado e revisão de design antes
+  da implementação.
+
+### Baseline de acessibilidade
+
+- Alvo: WCAG 2.1 Nível AA, conforme `standards/accessibility.md`.
+- Baseline atual: estrutura HTML semântica onde aplicável, `aria-labelledby` e
+  `role="alert"` na tela de login e rótulos textuais nos estados de status.
+- Lacunas conhecidas: não há auditoria WCAG completa nem verificação
+  automatizada de acessibilidade no CI; `prefers-reduced-motion` ainda não está
+  implementado. Essas lacunas exigem SPEC própria antes de correção.
+
+---
+
+## 18. Quality Gates Aplicáveis
+
+**Referência:** [standards/quality-gates.md](standards/quality-gates.md)
+
+| Gate | Condição de passagem | Evidência |
+|---|---|---|
+| Gate 1 — Pronto para design | Problema, usuários, escopo e riscos registrados | UX brief e discovery |
+| Gate 2 — Pronto para implementar | SPEC aprovada, TASK atribuída e plano de QA | Artefatos em `specs/` e `tasks/` |
+| Gate 3 — Pronto para revisão | Testes aplicáveis passam, QA-Verifier sem achados abertos e revisões independentes | Evidências de QA e `workflows/verification.md` |
+| Gate 4 — Pronto para release | Build, gates, documentação, versão e rollback confirmados | Relatório de release |
+| Gate 5 — Entrega e aprendizado | Código, `PROJECT.md`, SPEC e evidências alinhados | Revisão pós-entrega |
+
+### Verificações automatizadas do projeto
+
+| Verificação | Comando ou job | Critério |
+|---|---|---|
+| API — testes e cobertura | `npm run test:coverage` | 90% lines/functions/statements, 85% branches |
+| Simulator — testes | `npm test` | Suíte verde |
+| Dashboard — testes e build | `npm test` + `npm run build` | Ambos verdes |
+| Dependências | `npm audit` no CI | Sem vulnerabilidades bloqueantes |
+| SAST | CodeQL `security-extended` | Sem achados bloqueantes |
+| Secrets | Gitleaks | Sem segredos versionados |
+| Imagens | Trivy | Sem vulnerabilidades corrigíveis HIGH/CRITICAL |
+| SBOM | `anchore/sbom-action` | SPDX gerado por imagem |
+| DAST | OWASP ZAP baseline | Sem falhas bloqueantes |
+| Execução local segura | `make local-secure-up` + `make local-secure-status` | Serviços saudáveis |
+
+Falhas de gate exigem correção ou exceção humana explícita, com responsável e
+data de validade.
