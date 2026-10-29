@@ -27,12 +27,12 @@ processar estes dados através de um broker de mensagens ultrarrápido (Mosquitt
 ```mermaid
 graph TD
     %% Componentes
-    S[IoT Simulator<br/>(Node.js)] -->|MQTT| B(MQTT Broker<br/>Mosquitto)
-    B <-->|MQTT| A[API Backend<br/>(Node.js/Express)]
-    A -->|Mongoose| M[(MongoDB<br/>Timeseries)]
-    A -->|Socket.io| D[Dashboard Vue.js<br/>(Tempo Real)]
+    S["IoT Simulator<br/>(Node.js)"] -->|MQTT| B("MQTT Broker<br/>Mosquitto")
+    B <-->|MQTT| A["API Backend<br/>(Node.js/Express)"]
+    A -->|Mongoose| M[("MongoDB<br/>Timeseries")]
+    A -->|Socket.io| D["Dashboard Vue.js<br/>(Tempo Real)"]
     D -->|HTTP REST| A
-    N[Nginx Reverse Proxy] -->|Port 80/443| D
+    N["Nginx Reverse Proxy"] -->|"Port 80/443"| D
     N -->|Proxy Pass| A
     P[Prometheus] -->|Scrape :3000/metrics| A
     G[Grafana] -->|Query| P
