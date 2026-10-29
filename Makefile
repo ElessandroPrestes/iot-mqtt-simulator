@@ -1,8 +1,9 @@
-.PHONY: help up down logs build prod-up prod-down prod-build local-secure-up local-secure-down local-credentials local-secure-status local-secure-logs test clean
+.PHONY: help dev-env up down logs build prod-up prod-down prod-build local-secure-up local-secure-down local-credentials local-secure-status local-secure-logs test clean
 
 # Default target
 help:
 	@echo "Comandos disponíveis:"
+	@echo "  make dev-env     - Gera segredos locais ausentes no .env de desenvolvimento"
 	@echo "  make up          - Inicia os containers em modo desenvolvimento (docker-compose.yml)"
 	@echo "  make down        - Para e remove os containers em modo desenvolvimento"
 	@echo "  make logs        - Exibe os logs dos containers em desenvolvimento"
@@ -17,7 +18,10 @@ help:
 	@echo "  make test        - Executa os testes localmente (API e Dashboard)"
 	@echo "  make clean       - Remove containers, redes e volumes (aviso: dados serão perdidos)"
 
-up:
+dev-env:
+	./scripts/local/dev-env.sh
+
+up: dev-env
 	docker compose up -d
 
 down:
@@ -26,7 +30,7 @@ down:
 logs:
 	docker compose logs -f
 
-build:
+build: dev-env
 	docker compose build
 
 prod-up:

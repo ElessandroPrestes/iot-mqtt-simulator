@@ -221,6 +221,9 @@ Plataforma fullstack de **simulação e monitoramento IoT** industrial que:
 ### Comandos
 
 ```bash
+# Compose de desenvolvimento: gera segredos locais ausentes no .env
+make dev-env
+
 # Perfil seguro exclusivamente local (recomendado)
 make local-secure-up
 make local-credentials
@@ -254,6 +257,8 @@ Veja `.env.example` para lista completa. Variáveis críticas:
 | MQTT_USERNAME | iotuser | Usuário MQTT |
 | MQTT_PASSWORD | iotpassword | Senha MQTT |
 | MONGODB_URI | mongodb://mongo:27017/iot_dashboard | URI MongoDB |
+| JWT_SECRET | — (obrigatório no dev) | Segredo de assinatura JWT com no mínimo 32 caracteres; `make dev-env` gera quando ausente |
+| GF_SECURITY_ADMIN_PASSWORD | — (obrigatório no dev) | Senha admin do Grafana no compose de desenvolvimento; `make dev-env` gera quando ausente |
 | NODE_ENV | development | Ambiente |
 | API_PORT | 3000 | Porta da API |
 | CORS_ORIGINS | http://localhost:5173 | Origens permitidas |

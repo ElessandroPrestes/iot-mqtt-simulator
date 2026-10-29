@@ -87,8 +87,9 @@ e mantenha as credenciais fora do Git:
 
 ```bash
 cp .env.example .env
+make dev-env
 # Preencha AZURE_IOT_HUB_* no simulador e AZURE_EVENT_HUB_* na API.
-# O compose de desenvolvimento também exige JWT_SECRET preenchido; para o
+# make dev-env gera JWT_SECRET e GF_SECURITY_ADMIN_PASSWORD ausentes; para o
 # perfil seguro local, prefira make local-secure-up.
 docker compose -f docker-compose.yml -f docker-compose.azure.yml up -d --build
 ```
@@ -258,6 +259,23 @@ make local-secure-logs
 
 Para recriar todo o ambiente com identidades novas, execute
 `make local-secure-down` e depois `make local-secure-up`.
+
+### Solução de problemas do compose de desenvolvimento
+
+Se `make build` falhar com
+`required variable GF_SECURITY_ADMIN_PASSWORD is missing a value`, gere os
+segredos locais e repita o comando:
+
+```bash
+make dev-env
+make build
+```
+
+O `make dev-env` cria `.env` a partir de `.env.example` quando necessário e
+preenche `JWT_SECRET` e `GF_SECURITY_ADMIN_PASSWORD` apenas quando estiverem
+ausentes, sem sobrescrever valores existentes. Os segredos ficam restritos ao
+`.env` local, que é ignorado pelo Git. O perfil seguro local continua sendo o
+caminho recomendado para execução.
 
 ## 📖 Payload MQTT (Exemplos)
 

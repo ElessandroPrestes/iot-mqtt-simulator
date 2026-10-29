@@ -39,6 +39,13 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 - Gerador de rastreabilidade compatível com `TASK-NNN` histórico e
   `TASK-NNN-XX` canônico.
 
+### Fixed
+
+- `make build` e `make up` deixam de falhar por ausência de
+  `GF_SECURITY_ADMIN_PASSWORD` e `JWT_SECRET`: o novo `make dev-env` gera os
+  segredos locais ausentes de forma idempotente, mantendo a interpolação
+  obrigatória do compose e sem valores padrão conhecidos.
+
 ## [1.0.0] - Não publicado (escopo local)
 
 > Versão de produto concluída e aprovada apenas para execução local. Não houve
