@@ -1,4 +1,5 @@
-FROM node:22-alpine@sha256:b74031e546d7f4faf561d797ac1b76beccac856a042815ca77db4fd047581605 AS base
+FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS base
+RUN apk upgrade --no-cache
 WORKDIR /app
 COPY package*.json ./
 

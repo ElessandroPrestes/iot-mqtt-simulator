@@ -46,6 +46,13 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   segredos locais ausentes de forma idempotente, mantendo a interpolação
   obrigatória do compose e sem valores padrão conhecidos.
 
+### Security
+
+- Dependências de produção da API e do Dashboard atualizadas para corrigir
+  advisories HIGH/CRITICAL publicados após o último run verde.
+- Imagens base `node:22-alpine` e `nginx:alpine` atualizadas, com
+  `apk upgrade --no-cache` para absorver correções do Alpine.
+
 ## [1.0.0] - Não publicado (escopo local)
 
 > Versão de produto concluída e aprovada apenas para execução local. Não houve
