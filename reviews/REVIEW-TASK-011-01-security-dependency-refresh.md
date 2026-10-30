@@ -25,7 +25,7 @@ Task-Ref: TASK-011-01
 | AC-002 | Pass | `npm audit --omit=dev --audit-level=high` no Dashboard: exit `0` |
 | AC-003 | Pass | API: 41 suítes, 255 testes aprovados |
 | AC-004 | Pass | Dashboard: 12 arquivos, 59 testes e `vite build` aprovados |
-| AC-005 | Pending | Imagens construídas localmente; confirmação do Trivy depende do CI |
+| AC-005 | Pass | Run `40978199031`: jobs `Imagem — api`, `Imagem — simulator` e `Imagem — dashboard` aprovados |
 | AC-006 | Pass | Diff restrito a lockfiles, Dockerfiles, SPEC/TASK, changelog, review e matriz |
 
 ## Evidências
@@ -41,17 +41,16 @@ Task-Ref: TASK-011-01
 - Builds locais dos targets `api:production`, `simulator:base` e
   `dashboard:production`: concluídos.
 - Trivy local não executado: a imagem `aquasec/trivy:0.70.0` não pôde ser
-  obtida no ambiente; a validação canônica é o run de CI.
+  obtida no ambiente; a validação canônica foi o run de CI `40978199031`.
 
 ## Ressalvas
 
 - Revisão realizada pelo mesmo agente que implementou a correção. Ela não
   substitui revisão independente humana exigida antes de release.
-- A confirmação de AC-005 depende do run de CI após o push.
 - Nenhum upgrade breaking (`npm audit fix --force`) foi aplicado.
 - Este review não autoriza tag, merge em `main`, release público ou deploy.
 
 ## Decisão
 
-Aprovado com ressalvas para o escopo local. Audits, testes e build passam; o
-gate de imagens deve ser confirmado no CI antes de marcar a TASK como concluída.
+Aprovado com ressalvas para o escopo local. Audits, testes, build e os gates de
+imagem do run `40978199031` passaram; a TASK foi concluída.

@@ -5,7 +5,7 @@
 | Campo | Valor |
 |---|---|
 | ID | TASK-011-01 |
-| Status | In Progress (Em andamento) |
+| Status | Done (Concluído) |
 | Responsável | Engenharia e Segurança |
 | Refs: | SPEC: SPEC-011; Critérios de aceitação: AC-001, AC-002, AC-003, AC-004, AC-005, AC-006; ADRs: ADR-005, ADR-006 |
 | Dependências | Nenhuma |
@@ -47,7 +47,7 @@ pacotes de imagem com versões compatíveis, sem alterar comportamento.
 - [x] Aplicar `apk upgrade --no-cache` nos estágios de produção.
 - [x] Validar audits, testes e build.
 - [x] Atualizar changelog, review e matriz.
-- [ ] Confirmar CI verde após push.
+- [x] Confirmar CI verde após push.
 
 ## Validação
 
@@ -64,11 +64,11 @@ pacotes de imagem com versões compatíveis, sem alterar comportamento.
 
 - [x] Escopo implementado sem expansão.
 - [x] Testes e validações locais aprovados.
-- [ ] CI verde confirmado no run do push.
+- [x] CI verde confirmado no run `40978199031`.
 - [x] Documentação e rastreabilidade atualizadas.
 
 ## Resultado
 
 - Mudanças feitas: lockfiles, Dockerfiles, `CHANGELOG.md`, review e matriz.
 - Evidência: comandos locais e run de CI registrados no review.
-- Trabalho em aberto: confirmação do run de CI após o push.
+- Trabalho em aberto: revisão independente humana antes de release.
